@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Volume2, Mic, Square, Play, ArrowLeft, ArrowRight, CheckCircle, AlertCircle, RefreshCw, Award } from 'lucide-react';
 
-export default function InterviewScreenPage({ 
-  setCurrentPage, 
-  interviewSetup, 
-  recordedAnswers, 
-  setRecordedAnswers 
+export default function InterviewScreenPage({
+  setCurrentPage,
+  interviewSetup,
+  recordedAnswers,
+  setRecordedAnswers
 }) {
   const defaultQuestions = [
     "What is inheritance in object-oriented programming?",
@@ -67,14 +67,19 @@ export default function InterviewScreenPage({
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         const audioUrl = URL.createObjectURL(audioBlob);
 
-        // Store blob and audioUrl in state for this question
+        // Capture the timer value here before we reset state
+        const recordedDuration = timer;
+
+        // Store blob, audioUrl and initial parsing state in state for this question
         setRecordedAnswers(prev => ({
           ...prev,
           [currentIdx]: {
             blob: audioBlob,
             url: audioUrl,
-            duration: timer,
-            timestamp: new Date().toLocaleTimeString()
+            duration: recordedDuration,
+            timestamp: new Date().toLocaleTimeString(),
+            isTranscribing: false,
+            transcript: ''
           }
         }));
 
@@ -142,14 +147,53 @@ export default function InterviewScreenPage({
     }
   };
 
-  const handleSubmitAnswer = () => {
-    // Navigate to per-question feedback page
-    setCurrentPage('feedback');
+  const handleSubmitAnswer = async () => {
+    if (!currentAnswer || !currentAnswer.blob || currentAnswer.isTranscribing) return;
+
+    // Set loading state
+    setRecordedAnswers(prev => ({
+      ...prev,
+      [currentIdx]: { ...prev[currentIdx], isTranscribing: true }
+    }));
+
+    try {
+      const formData = new FormData();
+      formData.append('audio', currentAnswer.blob, 'recording.webm');
+
+      const response = await fetch('http://localhost:8000/api/transcribe', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error('API transcription error');
+
+      const data = await response.json();
+      if (data.error) throw new Error(data.error);
+
+      setRecordedAnswers(prev => ({
+        ...prev,
+        [currentIdx]: {
+          ...prev[currentIdx],
+          transcript: data.transcript,
+          isTranscribing: false,
+        }
+      }));
+    } catch (err) {
+      console.error("Transcription error:", err);
+      setRecordedAnswers(prev => ({
+        ...prev,
+        [currentIdx]: {
+          ...prev[currentIdx],
+          transcript: "We couldn't process your recording. Please try again.",
+          isTranscribing: false,
+        }
+      }));
+    }
   };
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
-      
+
       {/* Top Session Progress Bar */}
       <div className="glass-panel p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
         <div className="flex items-center space-x-3">
@@ -165,7 +209,7 @@ export default function InterviewScreenPage({
             Question {currentIdx + 1} of {questions.length}
           </span>
           <div className="w-24 bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800">
-            <div 
+            <div
               className="bg-indigo-500 h-full transition-all duration-300"
               style={{ width: `${((currentIdx + 1) / questions.length) * 100}%` }}
             />
@@ -175,20 +219,19 @@ export default function InterviewScreenPage({
 
       {/* Main Question Card */}
       <div className="glass-panel p-8 rounded-3xl border border-slate-800 space-y-6">
-        
+
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider">
               Technical Question {currentIdx + 1}
             </span>
-            
+
             <button
               onClick={handlePlayQuestion}
-              className={`flex items-center space-x-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                isSpeaking 
-                  ? 'bg-violet-600 text-white animate-pulse' 
-                  : 'bg-slate-900 hover:bg-slate-800 text-indigo-300 border border-slate-700'
-              }`}
+              className={`flex items-center space-x-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${isSpeaking
+                ? 'bg-violet-600 text-white animate-pulse'
+                : 'bg-slate-900 hover:bg-slate-800 text-indigo-300 border border-slate-700'
+                }`}
             >
               <Volume2 className="w-4 h-4 text-indigo-400" />
               <span>{isSpeaking ? 'Playing Audio...' : '🔊 Play Question'}</span>
@@ -221,7 +264,7 @@ export default function InterviewScreenPage({
 
           {/* Recording Status & Main Mic Button */}
           <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-8 text-center space-y-6">
-            
+
             {isRecording ? (
               <div className="space-y-4">
                 <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-red-950/80 border border-red-800 text-red-400 font-mono text-sm font-bold animate-pulse">
@@ -260,26 +303,61 @@ export default function InterviewScreenPage({
 
             {/* Recorded Audio Preview Player */}
             {currentAnswer && !isRecording && (
-              <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3 max-w-md mx-auto">
+              <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3 max-w-md mx-auto text-left">
                 <div className="flex items-center justify-between text-xs text-slate-400">
                   <span>Recorded Audio Preview</span>
                   <span className="font-mono text-indigo-400">{currentAnswer.timestamp}</span>
                 </div>
                 <audio controls src={currentAnswer.url} className="w-full h-10 accent-indigo-500 rounded-lg" />
+
+                {/* Transcript Section */}
+                <div className="pt-3 mt-3 border-t border-slate-800/80">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+                    AI Transcript
+                  </span>
+                  {currentAnswer.isTranscribing ? (
+                    <div className="flex items-center space-x-2 text-indigo-400 text-sm font-semibold animate-pulse bg-indigo-950/30 p-3 rounded-lg border border-indigo-900/50">
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Analyzing your answer...</span>
+                    </div>
+                  ) : (
+                    <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+                      <p className="text-slate-200 text-sm leading-relaxed font-medium">
+                        {currentAnswer.transcript ? (
+                          <span className="italic">"{currentAnswer.transcript}"</span>
+                        ) : (
+                          <span className="text-slate-500">Submit to view AI transcript.</span>
+                        )}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
           </div>
 
           {/* Answer Submit & Per-Question Action */}
-          {currentAnswer && !isRecording && (
+          {currentAnswer && !isRecording && !currentAnswer.transcript && !currentAnswer.isTranscribing && (
             <div className="flex justify-end pt-2">
               <button
                 onClick={handleSubmitAnswer}
                 className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-emerald-600/20 flex items-center space-x-2 transition-colors"
+                disabled={currentAnswer.isTranscribing}
               >
                 <Award className="w-4 h-4" />
-                <span>Submit Answer & View Feedback UI</span>
+                <span>{currentAnswer.isTranscribing ? 'Submitting...' : 'Submit Answer'}</span>
+              </button>
+            </div>
+          )}
+          {currentAnswer && !isRecording && currentAnswer.transcript && (
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setCurrentPage('feedback')}
+                className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-indigo-600/20 flex items-center space-x-2 transition-colors"
+              >
+                <Award className="w-4 h-4" />
+                <span>View Question Feedback</span>
               </button>
             </div>
           )}
@@ -293,11 +371,10 @@ export default function InterviewScreenPage({
         <button
           onClick={handlePrev}
           disabled={currentIdx === 0}
-          className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl text-sm font-semibold border transition-colors ${
-            currentIdx === 0
-              ? 'opacity-40 cursor-not-allowed text-slate-500 border-slate-800'
-              : 'bg-slate-900 hover:bg-slate-800 text-slate-200 border-slate-700'
-          }`}
+          className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl text-sm font-semibold border transition-colors ${currentIdx === 0
+            ? 'opacity-40 cursor-not-allowed text-slate-500 border-slate-800'
+            : 'bg-slate-900 hover:bg-slate-800 text-slate-200 border-slate-700'
+            }`}
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Previous Question</span>
