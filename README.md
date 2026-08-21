@@ -8,13 +8,6 @@
 
 **Mockly** is an AI-powered mock interview platform engineered specifically for students and fresh graduates. While traditional interview prep platforms only evaluate *what* you say, Mockly is designed to analyze *how* you communicate—evaluating vocal delivery, speaking pace, hesitation, filler words, pause frequency, and semantic answer relevance.
 
-> [!IMPORTANT]
-> **Day 2 Update:**
-> Local Whisper speech-to-text is now **fully integrated** and working end-to-end.
-> The React frontend records audio via MediaRecorder API, sends it to the FastAPI backend, which transcribes it using local OpenAI Whisper and returns the transcript back to the UI.
-> Filler words (um, uh, like, you know) are preserved in the transcript using an `initial_prompt`.
-> ML scoring (Random Forest, Sentence Transformers) is **not yet implemented** and will be added in future phases.
-
 ---
 
 ## 🛠️ Technology Stack
