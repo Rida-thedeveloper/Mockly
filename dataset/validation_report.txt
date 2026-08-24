@@ -1,0 +1,30 @@
+==================================================
+Mockly Dataset Quality Validation
+==================================================
+File validated: mockly_training.csv
+Path          : D:\Mehak\My learnings\BanoQabil\Mockly\dataset\mockly_training.csv
+
+Summary Statistics:
+  Total samples : 5000
+  Columns found : ['audio_id', 'question_id', 'wpm', 'pause_count', 'speech_duration', 'word_count', 'average_pause', 'silence_ratio', 'long_pause_count', 'filler_count', 'repetition_count', 'hesitation_label']
+
+Validation Checks:
+  [OK]   All required columns present.
+  [OK]   No missing values in core input feature columns.
+  [INFO] Missing/blank values in optional feature columns (expected for some datasets):
+         average_pause: 5000 missing / blank
+         silence_ratio: 5000 missing / blank
+         long_pause_count: 5000 missing / blank
+         filler_count: 5000 missing / blank
+         repetition_count: 5000 missing / blank
+  [OK]   All numeric columns contain valid numbers.
+  [OK]   All present labels are valid (3 unique class(es)).
+  [OK]   No duplicate audio_id entries.
+
+  [DIST] Class distribution:
+       Low       203 rows  (  4.1%)  
+       Medium   2430 rows  ( 48.6%)  #########
+       High     2367 rows  ( 47.3%)  #########
+       TOTAL    5000 rows
+
+[OK] All checks passed successfully.

@@ -39,13 +39,13 @@ export default function App() {
     switch (currentPage) {
       case 'landing':
         return <LandingPage setCurrentPage={setCurrentPage} />;
-      
+
       case 'login':
         return <LoginPage setCurrentPage={setCurrentPage} setUser={setUser} />;
-      
+
       case 'dashboard':
         return <DashboardPage setCurrentPage={setCurrentPage} user={user} />;
-      
+
       case 'setup':
         return (
           <SetupPage
@@ -54,7 +54,7 @@ export default function App() {
             setInterviewSetup={setInterviewSetup}
           />
         );
-      
+
       case 'interview':
         return (
           <InterviewScreenPage
@@ -64,7 +64,7 @@ export default function App() {
             setRecordedAnswers={setRecordedAnswers}
           />
         );
-      
+
       case 'feedback':
         return (
           <QuestionFeedbackPage
@@ -72,7 +72,7 @@ export default function App() {
             recordedAnswers={recordedAnswers}
           />
         );
-      
+
       case 'report':
         return (
           <FinalReportPage
@@ -80,13 +80,13 @@ export default function App() {
             recordedAnswers={recordedAnswers}
           />
         );
-      
+
       case 'history':
         return <HistoryPage setCurrentPage={setCurrentPage} />;
-      
+
       case 'progress':
         return <ProgressPage setCurrentPage={setCurrentPage} />;
-      
+
       default:
         return <LandingPage setCurrentPage={setCurrentPage} />;
     }

@@ -86,9 +86,9 @@ function SpeechAnalysisPanel({ features, transcript, isLoading, error }) {
   const colorMap = {
     indigo: 'border-indigo-900/60 bg-indigo-950/30',
     violet: 'border-violet-900/60 bg-violet-950/30',
-    cyan:   'border-cyan-900/60 bg-cyan-950/30',
-    amber:  'border-amber-900/60 bg-amber-950/30',
-    rose:   'border-rose-900/60 bg-rose-950/30',
+    cyan: 'border-cyan-900/60 bg-cyan-950/30',
+    amber: 'border-amber-900/60 bg-amber-950/30',
+    rose: 'border-rose-900/60 bg-rose-950/30',
     orange: 'border-orange-900/60 bg-orange-950/30',
   };
 
@@ -354,7 +354,7 @@ export default function InterviewScreenPage({
               className={`flex items-center space-x-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${isSpeaking
                 ? 'bg-violet-600 text-white animate-pulse'
                 : 'bg-slate-900 hover:bg-slate-800 text-indigo-300 border border-slate-700'
-              }`}
+                }`}
             >
               <Volume2 className="w-4 h-4 text-indigo-400" />
               <span>{isSpeaking ? 'Playing Audio...' : '🔊 Play Question'}</span>
@@ -479,7 +479,7 @@ export default function InterviewScreenPage({
           className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl text-sm font-semibold border transition-colors ${currentIdx === 0
             ? 'opacity-40 cursor-not-allowed text-slate-500 border-slate-800'
             : 'bg-slate-900 hover:bg-slate-800 text-slate-200 border-slate-700'
-          }`}
+            }`}
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Previous Question</span>
