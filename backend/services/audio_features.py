@@ -25,6 +25,7 @@ import logging
 import os
 import subprocess
 import tempfile
+import wave
 
 import numpy as np
 
@@ -45,14 +46,9 @@ def _get_ffmpeg_exe() -> str:
 
 def _ensure_wav(audio_path: str) -> tuple[str, bool]:
     """
-    If *audio_path* is already a WAV file return (audio_path, False).
-    Otherwise transcode it to a temporary WAV via ffmpeg and return
-    (tmp_wav_path, True).  The caller is responsible for deleting the
-    temp file when True is returned.
+    Transcode audio file to a temporary 16kHz mono WAV via ffmpeg.
+    Returns (tmp_wav_path, True).
     """
-    if audio_path.lower().endswith(".wav"):
-        return audio_path, False
-
     ffmpeg = _get_ffmpeg_exe()
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
     tmp.close()
@@ -62,7 +58,7 @@ def _ensure_wav(audio_path: str) -> tuple[str, bool]:
         "-i", audio_path,       # input
         "-vn",                  # drop video stream (webm may have it)
         "-acodec", "pcm_s16le", # 16-bit PCM
-        "-ar", "16000",         # resample to 16 kHz (good for speech)
+        "-ar", "16000",         # resample to 16 kHz
         "-ac", "1",             # mono
         tmp.name,
     ]
@@ -94,37 +90,21 @@ def extract_audio_features(
 ) -> dict:
     """
     Analyse an audio file and return a flat dictionary of acoustic features.
-
-    Parameters
-    ----------
-    audio_path : str
-        Path to the audio file (wav, mp3, webm, ogg, or anything ffmpeg handles)
-    silence_db_threshold : float
-        RMS energy below this dB level is classified as silence. Default -40 dB.
-    min_silence_duration : float
-        Contiguous silent frames shorter than this (seconds) are ignored --
-        treated as brief micro-pauses between words, not real pauses.
-    long_pause_threshold : float
-        A pause longer than this value (seconds) is counted as a 'long pause'.
-
-    Returns
-    -------
-    dict with the keys described in the module docstring.
+    Uses ffmpeg, standard library `wave`, and NumPy for high robustness.
     """
-    try:
-        import librosa
-    except ImportError as e:
-        raise RuntimeError(
-            "librosa is required for audio feature extraction. "
-            "Install it with: pip install librosa"
-        ) from e
-
-    # 1. Transcode to WAV if necessary (webm/ogg/mp4 are not decoded by soundfile)
     wav_path, is_tmp = _ensure_wav(audio_path)
     try:
-        y, sr = librosa.load(wav_path, sr=None, mono=True)
+        with wave.open(wav_path, "rb") as wf:
+            sr = wf.getframerate()
+            raw_bytes = wf.readframes(wf.getnframes())
+            y = np.frombuffer(raw_bytes, dtype=np.int16).astype(np.float32) / 32768.0
     except Exception as e:
-        raise ValueError(f"Could not load audio file '{audio_path}': {e}") from e
+        # Fall back to librosa if wave reading fails for any reason
+        try:
+            import librosa
+            y, sr = librosa.load(wav_path, sr=None, mono=True)
+        except Exception as err:
+            raise ValueError(f"Could not load audio file '{audio_path}': {err}") from err
     finally:
         if is_tmp and os.path.exists(wav_path):
             os.remove(wav_path)
@@ -132,15 +112,23 @@ def extract_audio_features(
     if len(y) == 0:
         raise ValueError("Audio file appears to be empty or unreadable.")
 
-    # 2. Compute short-time RMS energy
-    #    hop_length=512 gives ~11 ms/frame at 44100 Hz, ~23 ms at 22050 Hz
+    # 2. Compute short-time RMS energy via NumPy
     hop_length = 512
     frame_length = 1024
 
-    rms = librosa.feature.rms(y=y, frame_length=frame_length, hop_length=hop_length)[0]
+    if len(y) < frame_length:
+        # Pad short audio
+        y = np.pad(y, (0, frame_length - len(y)))
 
-    # Convert to dB (epsilon avoids log(0))
-    rms_db = librosa.amplitude_to_db(rms + 1e-9, ref=np.max)
+    num_frames = 1 + (len(y) - frame_length) // hop_length
+    shape = (num_frames, frame_length)
+    strides = (y.strides[0] * hop_length, y.strides[0])
+    frames = np.lib.stride_tricks.as_strided(y, shape=shape, strides=strides)
+    rms = np.sqrt(np.mean(frames ** 2, axis=1))
+
+    # Convert to dB (ref = max RMS)
+    ref = float(np.max(rms)) if len(rms) > 0 and np.max(rms) > 0 else 1.0
+    rms_db = 20.0 * np.log10(np.maximum(rms, 1e-9) / ref)
 
     # Boolean mask: True where the frame is silent
     is_silent_frame = rms_db < silence_db_threshold

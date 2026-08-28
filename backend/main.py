@@ -1,5 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import os
 import tempfile
 import logging
@@ -7,6 +8,8 @@ import logging
 from services.speech_to_text import transcribe_audio_file
 from services.audio_features import extract_audio_features
 from services.text_analysis import analyze_transcript
+from ml.predict import predict_hesitation
+from ml.feedback import generate_feedback
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -26,6 +29,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+class PredictRequest(BaseModel):
+    wpm: float
+    pause_count: int
+    speech_duration: float
+    word_count: int
+
+
 @app.get("/")
 def read_root():
     return {"message": "Mockly API is running"}
@@ -34,6 +44,25 @@ def read_root():
 @app.get("/api/health")
 def health_check():
     return {"status": "ok"}
+
+
+@app.post("/api/predict-hesitation")
+def predict_hesitation_route(req: PredictRequest):
+    """
+    Dedicated endpoint to run Random Forest hesitation prediction directly from 4 features.
+    """
+    try:
+        features = {
+            "wpm": req.wpm,
+            "pause_count": req.pause_count,
+            "speech_duration": req.speech_duration,
+            "word_count": req.word_count,
+        }
+        result = predict_hesitation(features)
+        return {"success": True, **result}
+    except Exception as e:
+        logger.error(f"Error in /api/predict-hesitation: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/api/transcribe")
@@ -134,14 +163,63 @@ async def analyze_audio(audio: UploadFile = File(...)):
             "repeated_items": text_feats.get("repeated_items", []),
         }
 
+        # ---------- Random Forest Hesitation Prediction ----------
+        logger.info("[analyze] Running Random Forest hesitation prediction")
+        hesitation_res = None
+        try:
+            wpm_val = features.get("wpm")
+            pause_val = features.get("pause_count")
+            speech_dur_val = features.get("speech_duration")
+            word_cnt_val = features.get("word_count")
+
+            if all(v is not None for v in [wpm_val, pause_val, speech_dur_val, word_cnt_val]):
+                model_inputs = {
+                    "wpm": wpm_val,
+                    "pause_count": pause_val,
+                    "speech_duration": speech_dur_val,
+                    "word_count": word_cnt_val,
+                }
+                hesitation_res = predict_hesitation(model_inputs)
+            else:
+                logger.warning("[analyze] Required features missing for hesitation prediction")
+                hesitation_res = {"error": "Waiting for speech analysis..."}
+        except Exception as err:
+            logger.error(f"[analyze] Hesitation prediction error: {err}")
+            hesitation_res = {"error": "ML prediction temporarily unavailable."}
+
+        # ---------- Feedback Generation ----------
+        logger.info("[analyze] Generating personalized interview feedback")
+        feedback_res = None
+        try:
+            pred_val = hesitation_res.get("prediction") if isinstance(hesitation_res, dict) else None
+            prob_val = hesitation_res.get("probabilities") if isinstance(hesitation_res, dict) else None
+
+            feedback_res = generate_feedback(
+                prediction=pred_val,
+                probabilities=prob_val,
+                wpm=features.get("wpm"),
+                pause_count=features.get("pause_count"),
+                speech_duration=features.get("speech_duration"),
+                word_count=features.get("word_count"),
+            )
+        except Exception as err:
+            logger.error(f"[analyze] Feedback generation error: {err}")
+            feedback_res = {
+                "summary": "Feedback unavailable due to processing error.",
+                "suggestions": ["Ensure your microphone is clear and try recording again."],
+            }
+
         logger.info("[analyze] Analysis complete.")
         return {
             "success": True,
             "transcript": transcript,
             "features": features,
+            "hesitation": hesitation_res,
+            "feedback": feedback_res,
         }
 
     finally:
         if os.path.exists(tmp_path):
             os.remove(tmp_path)
+
 

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Volume2, Mic, Square, ArrowLeft, ArrowRight,
   CheckCircle, AlertCircle, RefreshCw, Award,
@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 
 // ─── Speech Analysis Panel ────────────────────────────────────────────────────
-function SpeechAnalysisPanel({ features, transcript, isLoading, error }) {
+function SpeechAnalysisPanel({ features, transcript, hesitation, feedback, isLoading, error }) {
   if (isLoading) {
     return (
       <div className="mt-6 bg-slate-900/70 border border-slate-800 rounded-2xl p-6 space-y-3 animate-pulse">
@@ -117,6 +117,93 @@ function SpeechAnalysisPanel({ features, transcript, isLoading, error }) {
             <p className="text-[10px] text-slate-500 leading-tight truncate" title={sub}>{sub}</p>
           </div>
         ))}
+      </div>
+
+      {/* ML Hesitation Prediction */}
+      {hesitation && (
+        <div className="border-t border-slate-800/80 pt-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">
+              ML Hesitation Prediction
+            </span>
+            <span className="text-[10px] text-slate-500 font-mono">
+              Model: {hesitation.model || 'hesitation_rf_v2.joblib'}
+            </span>
+          </div>
+
+          {hesitation.error ? (
+            <div className="bg-amber-950/30 border border-amber-800/50 rounded-xl p-3 text-xs text-amber-300">
+              {hesitation.error}
+            </div>
+          ) : (
+            <div className="bg-slate-950/60 border border-slate-800 p-4 rounded-xl space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-slate-300">Predicted Communication Level:</span>
+                <span className="text-sm font-black text-white px-3 py-1 bg-indigo-950 border border-indigo-700/60 rounded-lg">
+                  {hesitation.prediction || 'N/A'}
+                </span>
+              </div>
+
+              {hesitation.probabilities && (
+                <div className="space-y-1.5 pt-1">
+                  <span className="text-[11px] font-medium text-slate-400 block">Model probabilities:</span>
+                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                    {['Low', 'Medium', 'High'].map(lbl => {
+                      const probVal = hesitation.probabilities[lbl];
+                      const probStr = probVal != null ? `${(probVal * 100).toFixed(0)}%` : '0%';
+                      return (
+                        <div key={lbl} className="bg-slate-900 border border-slate-800 rounded-lg p-2">
+                          <span className="text-slate-400 block text-[10px]">{lbl}</span>
+                          <span className="text-white font-bold">{probStr}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              <p className="text-[10px] text-slate-500 italic">
+                Model probabilities based on speech characteristics. Not a guaranteed diagnosis.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Personalized Feedback */}
+      <div className="border-t border-slate-800/80 pt-4 space-y-3">
+        <div className="flex items-center space-x-2">
+          <MessageSquare className="w-4 h-4 text-emerald-400" />
+          <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
+            Personalized Feedback
+          </span>
+        </div>
+
+        {feedback && feedback.summary ? (
+          <div className="bg-slate-950/60 border border-slate-800 p-4 rounded-xl space-y-3">
+            <p className="text-sm font-semibold text-slate-200">
+              {feedback.summary}
+            </p>
+            {feedback.suggestions && feedback.suggestions.length > 0 && (
+              <div className="space-y-1.5 border-t border-slate-800/60 pt-2.5">
+                <span className="text-[11px] font-semibold text-slate-400 block">
+                  Suggestions for Improvement:
+                </span>
+                <ul className="space-y-1.5 text-xs text-slate-300">
+                  {feedback.suggestions.map((sug, idx) => (
+                    <li key={idx} className="flex items-start space-x-2">
+                      <span className="text-emerald-400 font-bold mt-0.5">•</span>
+                      <span className="leading-relaxed">{sug}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="bg-slate-950/40 border border-slate-800/60 p-3 rounded-xl text-xs text-slate-400 italic">
+            Personalized feedback is temporarily unavailable.
+          </div>
+        )}
       </div>
 
       {/* Transcript */}
@@ -296,6 +383,8 @@ export default function InterviewScreenPage({
           ...prev[currentIdx],
           transcript: data.transcript,
           features: data.features,
+          hesitation: data.hesitation,
+          feedback: data.feedback,
           isAnalyzing: false,
           analyzeError: null,
         }
@@ -437,6 +526,8 @@ export default function InterviewScreenPage({
             <SpeechAnalysisPanel
               features={currentAnswer.features}
               transcript={currentAnswer.transcript}
+              hesitation={currentAnswer.hesitation}
+              feedback={currentAnswer.feedback}
               isLoading={currentAnswer.isAnalyzing}
               error={currentAnswer.analyzeError}
             />
