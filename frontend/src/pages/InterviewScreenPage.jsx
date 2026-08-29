@@ -228,7 +228,8 @@ export default function InterviewScreenPage({
   setCurrentPage,
   interviewSetup,
   recordedAnswers,
-  setRecordedAnswers
+  setRecordedAnswers,
+  setSelectedAnswerIdx,
 }) {
   const defaultQuestions = [
     "What is inheritance in object-oriented programming?",
@@ -550,7 +551,10 @@ export default function InterviewScreenPage({
           {hasResult && !currentAnswer.isAnalyzing && (
             <div className="flex justify-end pt-2">
               <button
-                onClick={() => setCurrentPage('feedback')}
+                onClick={() => {
+                  setSelectedAnswerIdx(currentIdx);
+                  setCurrentPage('feedback');
+                }}
                 className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-indigo-600/20 flex items-center space-x-2 transition-colors"
               >
                 <Award className="w-4 h-4" />

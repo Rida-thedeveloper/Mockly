@@ -34,6 +34,9 @@ export default function App() {
   // Recorded Audio Answers State (Question Index -> Audio Object)
   const [recordedAnswers, setRecordedAnswers] = useState({});
 
+  // Tracks which question's analysis to show on the feedback page
+  const [selectedAnswerIdx, setSelectedAnswerIdx] = useState(null);
+
   // Render Page Content based on active state
   const renderPage = () => {
     switch (currentPage) {
@@ -62,6 +65,7 @@ export default function App() {
             interviewSetup={interviewSetup}
             recordedAnswers={recordedAnswers}
             setRecordedAnswers={setRecordedAnswers}
+            setSelectedAnswerIdx={setSelectedAnswerIdx}
           />
         );
 
@@ -70,6 +74,7 @@ export default function App() {
           <QuestionFeedbackPage
             setCurrentPage={setCurrentPage}
             recordedAnswers={recordedAnswers}
+            selectedAnswerIdx={selectedAnswerIdx}
           />
         );
 
