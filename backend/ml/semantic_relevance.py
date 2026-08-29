@@ -29,8 +29,20 @@ def calculate_relevance(question: str, answer: str) -> int:
     score_float = float(cosine_scores[0][0])
     
     # Cosine similarity typically ranges from -1 to 1, but for semantic text models
-    # the range is often 0 to 1 for distinct texts, or negatives for very opposed.
-    # We map any negative values to 0, and max to 100.
-    final_score = int(np.clip(score_float * 100, 0, 100))
+    # the range is often 0 to 1 for distinct texts.
+    # We calibrate the score so that moderately similar texts get partial credit,
+    # and identical texts approach 100.
+    # Empirical thresholds for all-MiniLM-L6-v2:
+    # <= 0.1: Irrelevant
+    # >= 0.7: Highly relevant
+    if score_float <= 0.1:
+        mapped_score = 0.0
+    elif score_float >= 0.7:
+        mapped_score = 100.0
+    else:
+        # linear mapping from [0.1, 0.7] to [0, 100]
+        mapped_score = (score_float - 0.1) / (0.7 - 0.1) * 100.0
+        
+    final_score = int(np.clip(mapped_score, 0, 100))
     
     return final_score

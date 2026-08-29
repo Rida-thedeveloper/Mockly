@@ -230,6 +230,7 @@ export default function InterviewScreenPage({
   recordedAnswers,
   setRecordedAnswers,
   setSelectedAnswerIdx,
+  selectedAnswerIdx,
 }) {
   const defaultQuestions = [
     "What is inheritance in object-oriented programming?",
@@ -240,7 +241,7 @@ export default function InterviewScreenPage({
   ];
 
   const questions = defaultQuestions.slice(0, interviewSetup?.questionCount || 5);
-  const [currentIdx, setCurrentIdx] = useState(0);
+  const [currentIdx, setCurrentIdx] = useState(selectedAnswerIdx ?? 0);
   const [isRecording, setIsRecording] = useState(false);
   const [timer, setTimer] = useState(0);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -276,18 +277,23 @@ export default function InterviewScreenPage({
     if (spokenIdxRef.current !== currentIdx) {
       spokenIdxRef.current = currentIdx;
 
-      // Delay slightly to ensure smooth render before speech starts
-      const tid = setTimeout(() => {
-        handlePlayQuestion();
-      }, 500);
+      // Only speak if this question is not yet answered/transcribed
+      const hasAnswer = recordedAnswers[currentIdx]?.transcript != null;
 
-      return () => {
-        clearTimeout(tid);
-        // Reset ref if unmounted before completion, allowing StrictMode to remount properly
-        if (spokenIdxRef.current === currentIdx) {
-          spokenIdxRef.current = -1;
-        }
-      };
+      if (!hasAnswer) {
+        // Delay slightly to ensure smooth render before speech starts
+        const tid = setTimeout(() => {
+          handlePlayQuestion();
+        }, 500);
+
+        return () => {
+          clearTimeout(tid);
+          // Reset ref if unmounted before completion, allowing StrictMode to remount properly
+          if (spokenIdxRef.current === currentIdx) {
+            spokenIdxRef.current = -1;
+          }
+        };
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIdx]);

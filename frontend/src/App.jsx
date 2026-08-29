@@ -66,6 +66,7 @@ export default function App() {
             recordedAnswers={recordedAnswers}
             setRecordedAnswers={setRecordedAnswers}
             setSelectedAnswerIdx={setSelectedAnswerIdx}
+            selectedAnswerIdx={selectedAnswerIdx}
           />
         );
 
