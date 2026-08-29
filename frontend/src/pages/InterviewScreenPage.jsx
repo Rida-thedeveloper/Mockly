@@ -279,9 +279,15 @@ export default function InterviewScreenPage({
       // Delay slightly to ensure smooth render before speech starts
       const tid = setTimeout(() => {
         handlePlayQuestion();
-      }, 250);
+      }, 500);
 
-      return () => clearTimeout(tid);
+      return () => {
+        clearTimeout(tid);
+        // Reset ref if unmounted before completion, allowing StrictMode to remount properly
+        if (spokenIdxRef.current === currentIdx) {
+          spokenIdxRef.current = -1;
+        }
+      };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIdx]);

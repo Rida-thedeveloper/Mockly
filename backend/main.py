@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import os
@@ -101,7 +101,7 @@ async def transcribe_audio(audio: UploadFile = File(...)):
 @app.post("/api/analyze")
 async def analyze_audio(
     audio: UploadFile = File(...),
-    question: str = None
+    question: str = Form(None)
 ):
     """
     Full analysis endpoint: runs Whisper transcription AND librosa audio feature
