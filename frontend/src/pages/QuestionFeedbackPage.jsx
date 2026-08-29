@@ -70,13 +70,29 @@ export default function QuestionFeedbackPage({ setCurrentPage, recordedAnswers, 
             {/* ── Metric Cards ── */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
 
-              {/* Answer Relevance — genuinely unavailable */}
+              {/* Answer Relevance */}
               <div className="bg-slate-900/90 border border-slate-800 p-6 rounded-2xl space-y-3">
-                <span className="text-xs text-slate-400 font-semibold block">Answer Relevance</span>
-                <div className="text-2xl font-extrabold text-slate-500 font-mono">N/A</div>
-                <div className="text-[11px] text-slate-500 leading-snug">
-                  Semantic relevance scoring is not currently implemented.
-                </div>
+                <span className="text-xs text-slate-400 font-semibold block">AI Semantic Relevance</span>
+                {answer?.relevance ? (
+                  <>
+                    <div className="text-3xl font-extrabold text-white font-mono">
+                      {answer.relevance.score}%
+                    </div>
+                    <div className={`text-sm font-bold ${answer.relevance.score > 70 ? 'text-emerald-400' : answer.relevance.score > 40 ? 'text-amber-400' : 'text-rose-400'}`}>
+                      {answer.relevance.score > 70 ? 'High' : answer.relevance.score > 40 ? 'Moderate' : 'Low'}
+                    </div>
+                    <div className="text-[11px] text-slate-500 leading-snug">
+                      Sentence Transformer similarity
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-2xl font-extrabold text-slate-500 font-mono">N/A</div>
+                    <div className="text-[11px] text-slate-500 leading-snug">
+                      Requires question and transcript.
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Speaking Pace */}

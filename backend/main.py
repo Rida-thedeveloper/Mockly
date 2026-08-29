@@ -10,6 +10,7 @@ from services.audio_features import extract_audio_features
 from services.text_analysis import analyze_transcript
 from ml.predict import predict_hesitation
 from ml.feedback import generate_feedback
+from ml.semantic_relevance import calculate_relevance
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -98,7 +99,10 @@ async def transcribe_audio(audio: UploadFile = File(...)):
 
 
 @app.post("/api/analyze")
-async def analyze_audio(audio: UploadFile = File(...)):
+async def analyze_audio(
+    audio: UploadFile = File(...),
+    question: str = None
+):
     """
     Full analysis endpoint: runs Whisper transcription AND librosa audio feature
     extraction on the same uploaded file, returning both results together.
@@ -209,6 +213,22 @@ async def analyze_audio(audio: UploadFile = File(...)):
                 "suggestions": ["Ensure your microphone is clear and try recording again."],
             }
 
+        # ---------- Semantic Relevance ----------
+        relevance_score = None
+        if question and transcript:
+            try:
+                logger.info("[analyze] Calculating semantic relevance between question and transcript")
+                score = calculate_relevance(question, transcript)
+                relevance_score = {
+                    "score": score,
+                    "method": "Sentence Transformer semantic similarity"
+                }
+            except Exception as e:
+                logger.warning(f"[analyze] Semantic relevance failed: {e}")
+                relevance_score = {"score": 0, "method": "Error"}
+        elif question:
+            relevance_score = {"score": 0, "method": "Empty transcript"}
+
         logger.info("[analyze] Analysis complete.")
         return {
             "success": True,
@@ -216,6 +236,7 @@ async def analyze_audio(audio: UploadFile = File(...)):
             "features": features,
             "hesitation": hesitation_res,
             "feedback": feedback_res,
+            "relevance": relevance_score,
         }
 
     finally:
