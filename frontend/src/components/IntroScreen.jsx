@@ -5,26 +5,31 @@ export default function IntroScreen({ onDone }) {
   const videoRef = useRef(null);
   const [visible, setVisible] = useState(true);
   const [progress, setProgress] = useState(0);
+  // Browser autoplay policy: video must start muted to autoplay.
+  // User can click the sound overlay to unmute.
+  const [soundEnabled, setSoundEnabled] = useState(false);
+  const [showSoundPrompt, setShowSoundPrompt] = useState(true);
 
   function dismiss() {
     setVisible(false);
+  }
+
+  function enableSound() {
+    const vid = videoRef.current;
+    if (!vid) return;
+    vid.muted = false;
+    setSoundEnabled(true);
+    setShowSoundPrompt(false);
   }
 
   useEffect(() => {
     const vid = videoRef.current;
     if (!vid) return;
 
-    // Force autoplay — mute first, then try to unmute after play starts
+    // Must start muted for autoplay to work (Chrome/Safari policy).
+    // User can tap the prompt to unmute.
     vid.muted = true;
-    vid.play()
-      .then(() => {
-        vid.muted = false;
-      })
-      .catch(() => {
-        // If unmute fails (browser policy), stay muted and still play
-        vid.muted = true;
-        vid.play().catch(() => {});
-      });
+    vid.play().catch(() => {});
 
     const onEnd = () => dismiss();
     const onTime = () => {
@@ -78,15 +83,12 @@ export default function IntroScreen({ onDone }) {
             Mockly
           </motion.div>
 
-          {/* Plain video — no box, no border */}
+          {/* Video wrapper */}
           <motion.div
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.3, duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
-            style={{
-              position: 'relative',
-              width: 'min(380px, 80vw)',
-            }}
+            style={{ position: 'relative', width: 'min(380px, 80vw)' }}
           >
             <video
               ref={videoRef}
@@ -94,14 +96,50 @@ export default function IntroScreen({ onDone }) {
               autoPlay
               playsInline
               muted
-              style={{
-                width: '100%',
-                display: 'block',
-                borderRadius: '12px',
-              }}
+              style={{ width: '100%', display: 'block', borderRadius: '12px' }}
             />
 
-            {/* Progress bar — thin line below video */}
+            {/* Sound enable prompt — shown until user taps */}
+            <AnimatePresence>
+              {showSoundPrompt && (
+                <motion.button
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 4 }}
+                  transition={{ delay: 0.8, duration: 0.35 }}
+                  onClick={enableSound}
+                  style={{
+                    position: 'absolute',
+                    bottom: 16,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '6px 14px',
+                    background: 'rgba(0,0,0,0.65)',
+                    backdropFilter: 'blur(8px)',
+                    border: '1px solid rgba(201,168,76,0.3)',
+                    borderRadius: 100,
+                    color: 'var(--gold)',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    fontFamily: "'DM Sans', sans-serif",
+                    letterSpacing: '0.04em',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                    <path d="M11 5L6 9H2v6h4l5 4V5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                  Tap for sound
+                </motion.button>
+              )}
+            </AnimatePresence>
+
+            {/* Progress bar */}
             <div style={{ height: '2px', background: 'rgba(255,255,255,0.06)', borderRadius: '1px', marginTop: '10px' }}>
               <div
                 style={{
@@ -122,9 +160,7 @@ export default function IntroScreen({ onDone }) {
             transition={{ delay: 1.5, duration: 0.4 }}
             onClick={dismiss}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '7px',
+              display: 'flex', alignItems: 'center', gap: '7px',
               padding: '9px 22px',
               background: 'rgba(255,255,255,0.05)',
               backdropFilter: 'blur(10px)',
@@ -132,17 +168,10 @@ export default function IntroScreen({ onDone }) {
               borderRadius: '100px',
               color: 'var(--text-secondary)',
               fontFamily: "'DM Sans', sans-serif",
-              fontSize: '13px',
-              fontWeight: 500,
-              letterSpacing: '0.03em',
-              cursor: 'pointer',
-              lineHeight: 1,
+              fontSize: '13px', fontWeight: 500,
+              letterSpacing: '0.03em', cursor: 'pointer', lineHeight: 1,
             }}
-            whileHover={{
-              background: 'rgba(201,168,76,0.1)',
-              borderColor: 'rgba(201,168,76,0.3)',
-              color: 'var(--gold-light)',
-            }}
+            whileHover={{ background: 'rgba(201,168,76,0.1)', borderColor: 'rgba(201,168,76,0.3)', color: 'var(--gold-light)' }}
             whileTap={{ scale: 0.95 }}
           >
             Skip intro
