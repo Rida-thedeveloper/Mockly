@@ -5,31 +5,21 @@ export default function IntroScreen({ onDone }) {
   const videoRef = useRef(null);
   const [visible, setVisible] = useState(true);
   const [progress, setProgress] = useState(0);
-  // Browser autoplay policy: video must start muted to autoplay.
-  // User can click the sound overlay to unmute.
-  const [soundEnabled, setSoundEnabled] = useState(false);
-  const [showSoundPrompt, setShowSoundPrompt] = useState(true);
 
   function dismiss() {
     setVisible(false);
-  }
-
-  function enableSound() {
-    const vid = videoRef.current;
-    if (!vid) return;
-    vid.muted = false;
-    setSoundEnabled(true);
-    setShowSoundPrompt(false);
   }
 
   useEffect(() => {
     const vid = videoRef.current;
     if (!vid) return;
 
-    // Must start muted for autoplay to work (Chrome/Safari policy).
-    // User can tap the prompt to unmute.
-    vid.muted = true;
-    vid.play().catch(() => {});
+    // Try to play with sound. If browser blocks it, fall back to muted autoplay.
+    vid.muted = false;
+    vid.play().catch(() => {
+      vid.muted = true;
+      vid.play().catch(() => {});
+    });
 
     const onEnd = () => dismiss();
     const onTime = () => {
@@ -95,49 +85,8 @@ export default function IntroScreen({ onDone }) {
               src="/intro.mp4"
               autoPlay
               playsInline
-              muted
               style={{ width: '100%', display: 'block', borderRadius: '12px' }}
             />
-
-            {/* Sound enable prompt — shown until user taps */}
-            <AnimatePresence>
-              {showSoundPrompt && (
-                <motion.button
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 4 }}
-                  transition={{ delay: 0.8, duration: 0.35 }}
-                  onClick={enableSound}
-                  style={{
-                    position: 'absolute',
-                    bottom: 16,
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '6px 14px',
-                    background: 'rgba(0,0,0,0.65)',
-                    backdropFilter: 'blur(8px)',
-                    border: '1px solid rgba(201,168,76,0.3)',
-                    borderRadius: 100,
-                    color: 'var(--gold)',
-                    fontSize: 11,
-                    fontWeight: 600,
-                    fontFamily: "'DM Sans', sans-serif",
-                    letterSpacing: '0.04em',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                    <path d="M11 5L6 9H2v6h4l5 4V5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
-                  Tap for sound
-                </motion.button>
-              )}
-            </AnimatePresence>
 
             {/* Progress bar */}
             <div style={{ height: '2px', background: 'rgba(255,255,255,0.06)', borderRadius: '1px', marginTop: '10px' }}>

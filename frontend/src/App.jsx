@@ -22,6 +22,7 @@ const pageVariants = {
 };
 
 export default function App() {
+  const [authDone, setAuthDone] = useState(false);
   const [introShown, setIntroShown] = useState(false);
   const [currentPage, setCurrentPage] = useState('landing');
 
@@ -91,12 +92,34 @@ export default function App() {
     }
   };
 
+  // Step 1: Auth (login / signup)
+  if (!authDone) {
+    return (
+      <div style={{ background: '#050505', minHeight: '100vh' }}>
+        <LoginPage
+          setCurrentPage={setCurrentPage}
+          setUser={setUser}
+          onAuth={() => { setAuthDone(true); setCurrentPage('landing'); }}
+        />
+      </div>
+    );
+  }
+
+  // Step 2: Intro video
+  if (!introShown) {
+    return (
+      <div style={{ background: 'var(--obsidian)', minHeight: '100vh' }}>
+        <IntroScreen onDone={() => setIntroShown(true)} />
+      </div>
+    );
+  }
+
+  // Step 3: Main site
   return (
     <div
       className="min-h-screen flex flex-col selection:bg-indigo-600 selection:text-white"
       style={{ background: 'var(--obsidian)', color: 'var(--text-primary)' }}
     >
-      {!introShown && <IntroScreen onDone={() => setIntroShown(true)} />}
       <Navbar
         currentPage={currentPage}
         setCurrentPage={setCurrentPage}

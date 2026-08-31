@@ -155,7 +155,7 @@ function SocialButton({ icon, label, onClick }) {
 }
 
 /* ── Main export ────────────────────────────────────────────── */
-export default function LoginPage({ setCurrentPage, setUser }) {
+export default function LoginPage({ setCurrentPage, setUser, onAuth }) {
   const [mode, setMode] = useState('signup'); // 'signup' | 'signin'
 
   // Sign-up state
@@ -174,13 +174,13 @@ export default function LoginPage({ setCurrentPage, setUser }) {
     e.preventDefault();
     if (!agreeTerms) return;
     setUser({ name: `${suFirst} ${suLast}`.trim() || 'User', email: suEmail || 'user@mockly.dev' });
-    setCurrentPage('dashboard');
+    if (onAuth) onAuth(); else setCurrentPage('dashboard');
   }
 
   function handleSignIn(e) {
     e.preventDefault();
     setUser({ name: siEmail.split('@')[0] || 'User', email: siEmail || 'user@mockly.dev' });
-    setCurrentPage('dashboard');
+    if (onAuth) onAuth(); else setCurrentPage('dashboard');
   }
 
   return (
@@ -250,6 +250,10 @@ export default function LoginPage({ setCurrentPage, setUser }) {
               <SocialButton
                 icon={<GoogleIcon />}
                 label={mode === 'signup' ? 'Sign up with Google' : 'Sign in with Google'}
+                onClick={() => {
+                  setUser({ name: 'Google User', email: 'user@gmail.com' });
+                  if (onAuth) onAuth(); else setCurrentPage('dashboard');
+                }}
               />
             </div>
 
