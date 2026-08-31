@@ -364,54 +364,101 @@ export default function InterviewScreenPage({
           {/* Mic area */}
           <div style={{
             background: 'var(--surface-2)', border: '1px solid var(--border)',
-            borderRadius: 14, padding: '36px 24px',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
+            borderRadius: 14, padding: '40px 24px',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
           }}>
             {isRecording ? (
               <>
+                {/* REC timer badge */}
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: 8,
-                  padding: '6px 16px', borderRadius: 999,
-                  background: 'rgba(212,106,106,0.12)', border: '1px solid rgba(212,106,106,0.3)',
+                  padding: '6px 18px', borderRadius: 999,
+                  background: 'rgba(212,106,106,0.1)', border: '1px solid rgba(212,106,106,0.25)',
                   fontSize: 12, color: 'var(--accent-rose)', fontFamily: 'DM Mono, monospace', fontWeight: 600,
+                  letterSpacing: '0.08em',
                 }}>
                   <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--accent-rose)', animation: 'pulse-dot 1s ease-in-out infinite', display: 'inline-block' }} />
-                  REC  {fmt(timer)}
+                  REC &nbsp; {fmt(timer)}
                 </div>
-                <button
-                  onClick={stopRecording}
-                  className="mic-recording-pulse"
-                  style={{
-                    width: 72, height: 72, borderRadius: '50%',
-                    background: 'var(--accent-rose)',
-                    border: 'none', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'white',
-                  }}
-                >
-                  <Square size={24} fill="white" />
-                </button>
+
+                {/* Animated stop button — rose loaderCircle */}
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {/* Outer glow ring */}
+                  <div style={{
+                    position: 'absolute',
+                    width: 110, height: 110,
+                    borderRadius: '50%',
+                    animation: 'micCircleRec 3s linear infinite',
+                    opacity: 0.9,
+                  }} />
+                  {/* Mid ring */}
+                  <div style={{
+                    position: 'absolute',
+                    width: 90, height: 90,
+                    borderRadius: '50%',
+                    background: 'rgba(212,106,106,0.06)',
+                    animation: 'micPulseRing 1.2s ease-in-out infinite',
+                  }} />
+                  <button
+                    onClick={stopRecording}
+                    style={{
+                      width: 72, height: 72, borderRadius: '50%',
+                      background: 'radial-gradient(circle at 35% 35%, rgba(212,106,106,0.35), rgba(180,60,60,0.2))',
+                      border: '1.5px solid rgba(212,106,106,0.5)',
+                      cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: '#ff9090',
+                      position: 'relative', zIndex: 1,
+                      transition: 'transform 0.15s ease',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.07)'}
+                    onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                  >
+                    <Square size={22} fill="#ff9090" strokeWidth={0} />
+                  </button>
+                </div>
+
                 <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Click to stop recording</p>
               </>
             ) : (
               <>
-                <button
-                  onClick={startRecording}
-                  className="mic-pulse"
-                  style={{
-                    width: 72, height: 72, borderRadius: '50%',
-                    background: 'linear-gradient(135deg, rgba(201,168,76,0.2), rgba(201,168,76,0.08))',
-                    border: '1px solid rgba(201,168,76,0.3)',
-                    cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'var(--gold)',
-                    transition: 'transform 0.15s ease',
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.06)'}
-                  onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-                >
-                  <Mic size={26} />
-                </button>
+                {/* Animated idle mic — blue loaderCircle */}
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {/* Outer animated ring */}
+                  <div style={{
+                    position: 'absolute',
+                    width: 110, height: 110,
+                    borderRadius: '50%',
+                    animation: 'micCircleIdle 5s linear infinite',
+                    opacity: 0.85,
+                  }} />
+                  {/* Soft ambient glow */}
+                  <div style={{
+                    position: 'absolute',
+                    width: 140, height: 140,
+                    borderRadius: '50%',
+                    background: 'radial-gradient(circle, rgba(56,189,248,0.07) 0%, transparent 70%)',
+                    pointerEvents: 'none',
+                  }} />
+                  <button
+                    onClick={startRecording}
+                    style={{
+                      width: 72, height: 72, borderRadius: '50%',
+                      background: 'radial-gradient(circle at 35% 35%, rgba(56,189,248,0.22), rgba(0,93,255,0.1))',
+                      border: '1.5px solid rgba(56,189,248,0.35)',
+                      cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: '#60c8ff',
+                      position: 'relative', zIndex: 1,
+                      transition: 'transform 0.15s ease, border-color 0.2s ease',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.07)'; e.currentTarget.style.borderColor = 'rgba(56,189,248,0.6)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.borderColor = 'rgba(56,189,248,0.35)'; }}
+                  >
+                    <Mic size={26} />
+                  </button>
+                </div>
+
                 <div style={{ textAlign: 'center' }}>
                   <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>
                     {currentAnswer ? 'Re-record Response' : 'Record Response'}
@@ -567,6 +614,72 @@ export default function InterviewScreenPage({
 
       <style>{`
         @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+        @keyframes micCircleIdle {
+          0% {
+            transform: rotate(90deg);
+            box-shadow:
+              0 6px 12px 0 #38bdf8 inset,
+              0 12px 18px 0 #005dff inset,
+              0 36px 36px 0 #1e40af inset,
+              0 0 4px 1.5px rgba(56,189,248,0.25),
+              0 0 10px 2px rgba(0,93,255,0.15);
+          }
+          50% {
+            transform: rotate(270deg);
+            box-shadow:
+              0 6px 12px 0 #60a5fa inset,
+              0 12px 6px 0 #0284c7 inset,
+              0 24px 36px 0 #005dff inset,
+              0 0 4px 1.5px rgba(56,189,248,0.25),
+              0 0 10px 2px rgba(0,93,255,0.15);
+          }
+          100% {
+            transform: rotate(450deg);
+            box-shadow:
+              0 6px 12px 0 #4dc8fd inset,
+              0 12px 18px 0 #005dff inset,
+              0 36px 36px 0 #1e40af inset,
+              0 0 4px 1.5px rgba(56,189,248,0.25),
+              0 0 10px 2px rgba(0,93,255,0.15);
+          }
+        }
+
+        @keyframes micCircleRec {
+          0% {
+            transform: rotate(90deg);
+            box-shadow:
+              0 6px 12px 0 #f87171 inset,
+              0 12px 18px 0 #dc2626 inset,
+              0 36px 36px 0 #991b1b inset,
+              0 0 4px 1.5px rgba(248,113,113,0.3),
+              0 0 10px 2px rgba(220,38,38,0.2);
+          }
+          50% {
+            transform: rotate(270deg);
+            box-shadow:
+              0 6px 12px 0 #fca5a5 inset,
+              0 12px 6px 0 #ef4444 inset,
+              0 24px 36px 0 #dc2626 inset,
+              0 0 4px 1.5px rgba(248,113,113,0.3),
+              0 0 10px 2px rgba(220,38,38,0.2);
+          }
+          100% {
+            transform: rotate(450deg);
+            box-shadow:
+              0 6px 12px 0 #f87171 inset,
+              0 12px 18px 0 #dc2626 inset,
+              0 36px 36px 0 #991b1b inset,
+              0 0 4px 1.5px rgba(248,113,113,0.3),
+              0 0 10px 2px rgba(220,38,38,0.2);
+          }
+        }
+
+        @keyframes micPulseRing {
+          0%,100% { transform: scale(1); opacity: 0.5; }
+          50% { transform: scale(1.1); opacity: 0.15; }
+        }
+
         @media (max-width: 900px) {
           .sticky-sidebar { position: static !important; max-height: none !important; width: 100% !important; }
         }
