@@ -13,6 +13,7 @@ export default function IntroScreen({ onDone }) {
   useEffect(() => {
     const vid = videoRef.current;
     if (!vid) return;
+    vid.play().catch(() => {});
 
     const onEnd = () => dismiss();
     const onTime = () => {
@@ -32,85 +33,107 @@ export default function IntroScreen({ onDone }) {
       {visible && (
         <motion.div
           key="intro"
-          initial={{ opacity: 1 }}
-          exit={{ opacity: 0, scale: 1.04 }}
-          transition={{ duration: 0.7, ease: [0.4, 0, 0.2, 1] }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0, scale: 1.03 }}
+          transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
           style={{
             position: 'fixed',
             inset: 0,
             zIndex: 9999,
-            background: 'var(--obsidian)',
+            background: 'rgba(10,10,12,0.92)',
+            backdropFilter: 'blur(6px)',
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
+            gap: '20px',
           }}
         >
-          {/* Video */}
-          <video
-            ref={videoRef}
-            src="/intro.mp4"
-            autoPlay
-            muted={false}
-            playsInline
+          {/* MOCKLY wordmark — top */}
+          <motion.div
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.6 }}
             style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              display: 'block',
-            }}
-          />
-
-          {/* Subtle vignette */}
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              background:
-                'radial-gradient(ellipse 90% 90% at 50% 50%, transparent 60%, rgba(10,10,12,0.7) 100%)',
+              fontFamily: "'Playfair Display', Georgia, serif",
+              fontSize: 'clamp(22px, 3vw, 32px)',
+              letterSpacing: '0.45em',
+              color: 'var(--gold)',
+              textTransform: 'uppercase',
+              fontWeight: 700,
               pointerEvents: 'none',
             }}
-          />
+          >
+            Mockly
+          </motion.div>
 
-          {/* Progress bar */}
-          <div
+          {/* Video card */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94, y: 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ delay: 0.35, duration: 0.55, ease: [0.25, 0.46, 0.45, 0.94] }}
             style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: '3px',
-              background: 'rgba(255,255,255,0.08)',
+              position: 'relative',
+              width: 'min(560px, 90vw)',
+              aspectRatio: '16/9',
+              borderRadius: '16px',
+              overflow: 'hidden',
+              border: '1px solid rgba(201,168,76,0.2)',
+              boxShadow: '0 0 60px rgba(201,168,76,0.08), 0 24px 64px rgba(0,0,0,0.6)',
             }}
           >
-            <motion.div
+            <video
+              ref={videoRef}
+              src="/intro.mp4"
+              autoPlay
+              playsInline
               style={{
+                width: '100%',
                 height: '100%',
-                background: 'var(--gold)',
-                transformOrigin: 'left',
-                scaleX: progress,
+                objectFit: 'cover',
+                display: 'block',
               }}
             />
-          </div>
 
-          {/* Skip button */}
+            {/* Progress bar inside the card */}
+            <div
+              style={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: '3px',
+                background: 'rgba(255,255,255,0.08)',
+              }}
+            >
+              <div
+                style={{
+                  height: '100%',
+                  background: 'var(--gold)',
+                  width: `${progress * 100}%`,
+                  transition: 'width 0.25s linear',
+                }}
+              />
+            </div>
+          </motion.div>
+
+          {/* Skip button — below the video */}
           <motion.button
-            initial={{ opacity: 0, y: -8 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.2, duration: 0.4 }}
+            transition={{ delay: 1.4, duration: 0.4 }}
             onClick={dismiss}
             style={{
-              position: 'absolute',
-              top: '28px',
-              right: '32px',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              padding: '10px 20px',
-              background: 'rgba(255,255,255,0.07)',
+              padding: '10px 24px',
+              background: 'rgba(255,255,255,0.06)',
               backdropFilter: 'blur(12px)',
-              border: '1px solid rgba(255,255,255,0.12)',
+              border: '1px solid rgba(255,255,255,0.1)',
               borderRadius: '100px',
-              color: 'var(--text-primary)',
+              color: 'var(--text-secondary)',
               fontFamily: "'DM Sans', sans-serif",
               fontSize: '13px',
               fontWeight: 500,
@@ -119,58 +142,24 @@ export default function IntroScreen({ onDone }) {
               lineHeight: 1,
             }}
             whileHover={{
-              background: 'rgba(201,168,76,0.15)',
-              borderColor: 'rgba(201,168,76,0.4)',
+              background: 'rgba(201,168,76,0.12)',
+              borderColor: 'rgba(201,168,76,0.35)',
               color: 'var(--gold-light)',
             }}
             whileTap={{ scale: 0.95 }}
           >
-            Skip
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 16 16"
-              fill="none"
-              style={{ opacity: 0.7 }}
-            >
+            Skip intro
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ opacity: 0.7 }}>
               <path
-                d="M3 8h10M9 4l4 4-4 4"
+                d="M3 8h9M8.5 4.5l3.5 3.5-3.5 3.5"
                 stroke="currentColor"
                 strokeWidth="1.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
-              <rect
-                x="12"
-                y="3"
-                width="1.5"
-                height="10"
-                rx="0.75"
-                fill="currentColor"
-              />
+              <rect x="12" y="3.5" width="1.5" height="9" rx="0.75" fill="currentColor" />
             </svg>
           </motion.button>
-
-          {/* Mockly wordmark — faint overlay so brand is visible */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6, duration: 0.8 }}
-            style={{
-              position: 'absolute',
-              bottom: '40px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              fontFamily: "'Playfair Display', Georgia, serif",
-              fontSize: 'clamp(13px, 2vw, 18px)',
-              letterSpacing: '0.35em',
-              color: 'rgba(201,168,76,0.55)',
-              textTransform: 'uppercase',
-              pointerEvents: 'none',
-            }}
-          >
-            Mockly
-          </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
