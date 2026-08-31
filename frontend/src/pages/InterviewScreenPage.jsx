@@ -638,7 +638,7 @@ export default function InterviewScreenPage({
     return arr.slice(0, setup?.questionCount || 5);
   }
 
-  const questions = getQuestions(interviewSetup);
+  const [questions] = useState(() => getQuestions(interviewSetup));
   const [currentIdx, setCurrentIdx] = useState(selectedAnswerIdx ?? 0);
   const [isRecording, setIsRecording] = useState(false);
   const [timer, setTimer] = useState(0);
