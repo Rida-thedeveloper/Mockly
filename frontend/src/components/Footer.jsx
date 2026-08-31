@@ -1,9 +1,6 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Mic, ArrowUp, ArrowRight } from 'lucide-react';
-
-gsap.registerPlugin(ScrollTrigger);
+import { ArrowUp, ArrowRight } from 'lucide-react';
 
 // ── Magnetic button ───────────────────────────────────────────────────────────
 function MagneticButton({ children, onClick, variant = 'ghost', style = {} }) {
@@ -22,12 +19,10 @@ function MagneticButton({ children, onClick, variant = 'ghost', style = {} }) {
     const el = ref.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    const dx = e.clientX - cx;
-    const dy = e.clientY - cy;
-    xTo.current?.(dx * 0.35);
-    yTo.current?.(dy * 0.35);
+    const dx = e.clientX - (rect.left + rect.width / 2);
+    const dy = e.clientY - (rect.top + rect.height / 2);
+    xTo.current?.(dx * 0.32);
+    yTo.current?.(dy * 0.32);
   }, []);
 
   const onMouseLeave = useCallback(() => {
@@ -36,25 +31,21 @@ function MagneticButton({ children, onClick, variant = 'ghost', style = {} }) {
   }, []);
 
   const base = {
-    display: 'inline-flex', alignItems: 'center', gap: 8,
-    fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: 14,
-    borderRadius: 100, padding: '13px 28px',
-    cursor: 'pointer', border: 'none', transition: 'background 0.2s, color 0.2s',
+    display: 'inline-flex', alignItems: 'center', gap: 9,
+    fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: 14,
+    borderRadius: 100, padding: '14px 30px',
+    cursor: 'pointer', border: 'none',
+    transition: 'background 0.2s, color 0.2s, box-shadow 0.2s',
+    letterSpacing: '0.01em',
     ...style,
   };
 
   const styles = variant === 'gold'
-    ? { ...base, background: 'var(--gold)', color: '#0a0804' }
-    : { ...base, background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border)' };
+    ? { ...base, background: 'var(--gold)', color: '#0a0804', boxShadow: '0 4px 24px rgba(201,168,76,0.25)' }
+    : { ...base, background: 'rgba(255,255,255,0.04)', color: 'var(--text-secondary)', border: '1px solid rgba(255,255,255,0.1)' };
 
   return (
-    <button
-      ref={ref}
-      style={styles}
-      onClick={onClick}
-      onMouseMove={onMouseMove}
-      onMouseLeave={onMouseLeave}
-    >
+    <button ref={ref} style={styles} onClick={onClick} onMouseMove={onMouseMove} onMouseLeave={onMouseLeave}>
       {children}
     </button>
   );
@@ -79,12 +70,7 @@ function MarqueeStrip() {
     const el = trackRef.current;
     if (!el) return;
     const ctx = gsap.context(() => {
-      gsap.to(el, {
-        x: '-50%',
-        duration: 22,
-        ease: 'none',
-        repeat: -1,
-      });
+      gsap.to(el, { x: '-50%', duration: 28, ease: 'none', repeat: -1 });
     });
     return () => ctx.revert();
   }, []);
@@ -92,24 +78,33 @@ function MarqueeStrip() {
   const doubled = [...MARQUEE_ITEMS, ...MARQUEE_ITEMS];
 
   return (
-    <div style={{ overflow: 'hidden', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', padding: '14px 0' }}>
-      <div
-        ref={trackRef}
-        style={{ display: 'flex', gap: 0, whiteSpace: 'nowrap', willChange: 'transform' }}
-      >
+    <div style={{
+      overflow: 'hidden',
+      borderTop: '1px solid rgba(255,255,255,0.06)',
+      borderBottom: '1px solid rgba(255,255,255,0.06)',
+      padding: '13px 0',
+      background: 'rgba(201,168,76,0.02)',
+    }}>
+      <div ref={trackRef} style={{ display: 'flex', whiteSpace: 'nowrap', willChange: 'transform' }}>
         {doubled.map((item, i) => (
           <span
             key={i}
             style={{
-              display: 'inline-flex', alignItems: 'center', gap: 16,
-              paddingRight: 40, fontSize: 12,
-              fontFamily: 'DM Mono, monospace',
-              fontWeight: 500, letterSpacing: '0.07em',
+              display: 'inline-flex', alignItems: 'center', gap: 14,
+              paddingRight: 36,
+              fontSize: 11,
+              fontFamily: "'DM Mono', monospace",
+              fontWeight: 400,
+              letterSpacing: '0.15em',
               textTransform: 'uppercase',
-              color: i % 5 === 0 ? 'var(--gold)' : 'var(--text-muted)',
+              color: i % 4 === 0 ? 'rgba(201,168,76,0.7)' : 'rgba(255,255,255,0.2)',
             }}
           >
-            <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--border)', flexShrink: 0, display: 'inline-block' }} />
+            <span style={{
+              width: 3, height: 3, borderRadius: '50%',
+              background: i % 4 === 0 ? 'rgba(201,168,76,0.6)' : 'rgba(255,255,255,0.15)',
+              flexShrink: 0, display: 'inline-block',
+            }} />
             {item}
           </span>
         ))}
@@ -119,41 +114,20 @@ function MarqueeStrip() {
 }
 
 // ── Main Footer ───────────────────────────────────────────────────────────────
-export default function Footer({ setCurrentPage }) {
+const NO_FOOTER_PAGES = ['interview', 'feedback', 'report'];
+
+export default function Footer({ setCurrentPage, currentPage }) {
   const wrapperRef = useRef(null);
   const innerRef = useRef(null);
+  const wordmarkRef = useRef(null);
 
   useEffect(() => {
-    const wrapper = wrapperRef.current;
-    const inner = innerRef.current;
-    if (!wrapper || !inner) return;
-
-    const ctx = gsap.context(() => {
-      gsap.set(inner, { yPercent: -50 });
-
-      ScrollTrigger.create({
-        trigger: wrapper,
-        start: 'top bottom',
-        end: 'bottom bottom',
-        scrub: true,
-        onUpdate: (self) => {
-          gsap.set(inner, { yPercent: gsap.utils.interpolate(-50, 0, self.progress) });
-        },
-      });
-    });
-
-    return () => ctx.revert();
+    // intentionally empty — removed parallax that caused content to hide on short pages
   }, []);
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
-  const navLinks = [
-    { label: 'Home', page: 'landing' },
-    { label: 'Dashboard', page: 'dashboard' },
-    { label: 'Practice', page: 'setup' },
-    { label: 'History', page: 'history' },
-    { label: 'Progress', page: 'progress' },
-  ];
+  if (NO_FOOTER_PAGES.includes(currentPage)) return null;
 
   return (
     <footer
@@ -161,146 +135,196 @@ export default function Footer({ setCurrentPage }) {
       style={{
         position: 'relative',
         overflow: 'hidden',
-        background: 'var(--obsidian)',
-        minHeight: '520px',
+        background: '#08080a',
+        borderTop: '1px solid rgba(255,255,255,0.06)',
       }}
     >
-      <div
-        ref={innerRef}
-        style={{ position: 'relative', zIndex: 1 }}
-      >
+      {/* Subtle dot-grid texture */}
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none',
+        backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.025) 1px, transparent 1px)',
+        backgroundSize: '28px 28px',
+      }} />
+
+      {/* Ambient radial glow — top center */}
+      <div style={{
+        position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
+        width: '80%', height: 400,
+        background: 'radial-gradient(ellipse at top, rgba(201,168,76,0.07) 0%, transparent 65%)',
+        pointerEvents: 'none',
+      }} />
+
+      <div ref={innerRef} style={{ position: 'relative', zIndex: 1 }}>
+
         {/* Marquee */}
         <MarqueeStrip />
 
-        {/* Giant background wordmark */}
-        <div style={{
-          position: 'absolute', top: '50%', left: '50%',
-          transform: 'translate(-50%, -50%)',
-          fontSize: 'clamp(80px, 18vw, 200px)',
-          fontFamily: 'Playfair Display, serif',
-          fontWeight: 900, fontStyle: 'italic',
-          color: 'transparent',
-          WebkitTextStroke: '1px rgba(201,168,76,0.08)',
-          letterSpacing: '-0.04em',
-          pointerEvents: 'none',
-          userSelect: 'none',
-          whiteSpace: 'nowrap',
-          zIndex: 0,
-        }}>
-          MOCKLY
+        {/* ── Main body ── */}
+        <div style={{ padding: '80px 48px 0', maxWidth: 1100, margin: '0 auto' }}>
+
+          {/* Thin gold divider */}
+          <div style={{
+            width: 48, height: '1px', margin: '0 auto 40px',
+            background: 'linear-gradient(90deg, transparent, rgba(201,168,76,0.5), transparent)',
+          }} />
+
+          {/* Content — centered CTA */}
+          <div style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
+
+            {/* Top eyebrow row */}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 28 }}>
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                width: 30, height: 30, borderRadius: '50%',
+                border: '1px solid rgba(201,168,76,0.25)',
+                background: 'rgba(201,168,76,0.06)',
+              }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(201,168,76,0.9)" strokeWidth="1.5" strokeLinecap="round">
+                  <rect x="9" y="2" width="6" height="11" rx="3" />
+                  <path d="M5 10a7 7 0 0 0 14 0" />
+                  <line x1="12" y1="17" x2="12" y2="21" />
+                  <line x1="9" y1="21" x2="15" y2="21" />
+                </svg>
+              </span>
+              <span style={{
+                fontFamily: "'DM Mono', monospace", fontSize: 10,
+                letterSpacing: '0.25em', color: 'rgba(201,168,76,0.6)', textTransform: 'uppercase',
+              }}>
+                AI Interview Coach
+              </span>
+              <span style={{ width: 24, height: '1px', background: 'rgba(201,168,76,0.25)' }} />
+            </div>
+
+            {/* Heading */}
+            <h2 style={{
+              fontFamily: "'Playfair Display', serif",
+              fontSize: 'clamp(30px, 5vw, 54px)',
+              fontWeight: 800, color: 'var(--text-primary)',
+              lineHeight: 1.15, marginBottom: 16, letterSpacing: '-0.02em',
+            }}>
+              Ready to ace your{' '}
+              <em style={{ fontStyle: 'italic', color: 'var(--gold)' }}>next interview?</em>
+            </h2>
+
+            {/* Subtext */}
+            <p style={{
+              fontFamily: "'DM Sans', sans-serif", fontSize: 15,
+              color: 'rgba(255,255,255,0.4)', maxWidth: 380, margin: '0 auto 40px',
+              lineHeight: 1.7, fontWeight: 300,
+            }}>
+              Practice with real questions, get instant speech analysis, and track your improvement over time.
+            </p>
+
+            {/* CTA buttons */}
+            <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <MagneticButton variant="gold" onClick={() => setCurrentPage('setup')}>
+                Start Practising
+                <ArrowRight size={14} />
+              </MagneticButton>
+              <MagneticButton variant="ghost" onClick={() => setCurrentPage('progress')}>
+                View Progress
+              </MagneticButton>
+            </div>
+
+          </div>
         </div>
 
-        {/* Center CTA content */}
-        <div style={{
-          position: 'relative', zIndex: 2,
-          padding: '64px 24px 40px',
-          textAlign: 'center',
-        }}>
+        {/* ── MOCKLY watermark row — below content, partially clipped ── */}
+        <div style={{ position: 'relative', overflow: 'hidden', marginTop: 32, height: 'clamp(80px, 12vw, 140px)' }}>
+          {/* Fade-up mask so watermark fades into the footer background */}
           <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            background: 'var(--gold-dim)', border: '1px solid rgba(201,168,76,0.2)',
-            borderRadius: 100, padding: '6px 16px',
-            marginBottom: 24,
-          }}>
-            <Mic size={12} color="var(--gold)" />
-            <span style={{ fontSize: 11, fontFamily: 'DM Mono, monospace', color: 'var(--gold)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              AI Interview Coach
-            </span>
-          </div>
-
-          <h2
-            className="font-display"
+            position: 'absolute', top: 0, left: 0, right: 0, height: '60%',
+            background: 'linear-gradient(to bottom, #08080a, transparent)',
+            zIndex: 2, pointerEvents: 'none',
+          }} />
+          <style>{`
+            @keyframes mockly-shimmer {
+              0%   { background-position: -200% center; }
+              100% { background-position: 200% center; }
+            }
+          `}</style>
+          <div
+            ref={wordmarkRef}
+            aria-hidden="true"
             style={{
-              fontSize: 'clamp(28px, 5vw, 52px)',
-              fontWeight: 800,
-              color: 'var(--text-primary)',
-              lineHeight: 1.15,
-              marginBottom: 12,
-              letterSpacing: '-0.02em',
+              position: 'absolute',
+              bottom: '-15%',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              fontSize: 'clamp(80px, 16vw, 190px)',
+              fontFamily: "'Playfair Display', serif",
+              fontWeight: 900,
+              fontStyle: 'italic',
+              letterSpacing: '-0.03em',
+              pointerEvents: 'none',
+              userSelect: 'none',
+              whiteSpace: 'nowrap',
+              lineHeight: 1,
+              background: 'linear-gradient(90deg, rgba(201,168,76,0.08) 0%, rgba(201,168,76,0.38) 30%, rgba(255,223,100,0.62) 50%, rgba(201,168,76,0.38) 70%, rgba(201,168,76,0.08) 100%)',
+              backgroundSize: '200% auto',
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text',
+              color: 'transparent',
+              WebkitTextStroke: '1px rgba(201,168,76,0.2)',
+              animation: 'mockly-shimmer 5s linear infinite',
             }}
           >
-            Ready to ace your<br />
-            <em style={{ fontStyle: 'italic', color: 'var(--gold)' }}>next interview?</em>
-          </h2>
-
-          <p style={{
-            fontSize: 15, color: 'var(--text-secondary)', maxWidth: 420,
-            margin: '0 auto 36px', lineHeight: 1.65, fontWeight: 300,
-          }}>
-            Practice with real questions, get instant speech analysis, and track your improvement over time.
-          </p>
-
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <MagneticButton variant="gold" onClick={() => setCurrentPage('setup')}>
-              Start Practising Now
-              <ArrowRight size={15} />
-            </MagneticButton>
-            <MagneticButton variant="ghost" onClick={() => setCurrentPage('progress')}>
-              View Your Progress
-            </MagneticButton>
+            MOCKLY
           </div>
         </div>
 
-        {/* Nav links row */}
+        {/* ── Bottom bar ── */}
         <div style={{
-          display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '4px 20px',
-          padding: '16px 24px',
-        }}>
-          {navLinks.map(l => (
-            <button
-              key={l.page}
-              onClick={() => setCurrentPage(l.page)}
-              style={{
-                background: 'none', border: 'none',
-                fontFamily: 'DM Sans, sans-serif', fontSize: 13,
-                color: 'var(--text-muted)', cursor: 'pointer',
-                padding: '4px 0',
-                transition: 'color 0.2s',
-              }}
-              onMouseEnter={e => e.target.style.color = 'var(--gold)'}
-              onMouseLeave={e => e.target.style.color = 'var(--text-muted)'}
-            >
-              {l.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Bottom bar */}
-        <div style={{
-          borderTop: '1px solid var(--border)',
-          padding: '18px 32px',
+          borderTop: '1px solid rgba(255,255,255,0.05)',
+          padding: '16px 32px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           flexWrap: 'wrap', gap: 12,
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{
-              width: 28, height: 28, borderRadius: 7,
-              background: 'var(--gold-dim)', border: '1px solid rgba(201,168,76,0.2)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
+          {/* Left — wordmark + copyright */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <span style={{
+              fontFamily: "'Playfair Display', serif",
+              fontSize: 16, fontWeight: 700, fontStyle: 'italic',
+              color: 'var(--gold)', letterSpacing: '0.04em',
             }}>
-              <Mic size={13} color="var(--gold)" />
-            </div>
-            <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: 'var(--text-muted)' }}>
-              © 2026 Mockly — Built for students &amp; fresh graduates
+              Mockly
+            </span>
+            <span style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.1)' }} />
+            <span style={{
+              fontFamily: "'DM Mono', monospace",
+              fontSize: 11,
+              color: 'rgba(255,255,255,0.2)',
+              letterSpacing: '0.06em',
+            }}>
+              © 2026 — Built for students &amp; fresh graduates
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <span className="tag-gold" style={{ fontSize: 10 }}>ML Pipeline Active</span>
+          {/* Right — back to top */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <button
               onClick={scrollToTop}
               style={{
-                width: 34, height: 34, borderRadius: '50%',
-                background: 'var(--surface-2)', border: '1px solid var(--border)',
+                width: 32, height: 32, borderRadius: '50%',
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.08)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', color: 'var(--text-muted)',
-                transition: 'border-color 0.2s, color 0.2s',
+                cursor: 'pointer', color: 'rgba(255,255,255,0.25)',
+                transition: 'border-color 0.2s, color 0.2s, background 0.2s',
               }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.35)'; e.currentTarget.style.color = 'var(--gold)'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)'; }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = 'rgba(201,168,76,0.35)';
+                e.currentTarget.style.color = 'var(--gold)';
+                e.currentTarget.style.background = 'rgba(201,168,76,0.06)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                e.currentTarget.style.color = 'rgba(255,255,255,0.25)';
+                e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+              }}
               title="Back to top"
             >
-              <ArrowUp size={14} />
+              <ArrowUp size={13} />
             </button>
           </div>
         </div>

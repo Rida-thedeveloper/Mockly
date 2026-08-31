@@ -72,18 +72,6 @@ function FieldBox({ label, value, onChange, type = 'text' }) {
       }}>
         {label}
       </span>
-      {!active && (
-        <span style={{
-          position: 'absolute',
-          right: 20,
-          fontSize: 15,
-          color: 'rgba(255,255,255,0.85)',
-          fontFamily: "'DM Sans', sans-serif",
-          pointerEvents: 'none',
-        }}>
-          {label}
-        </span>
-      )}
     </label>
   );
 }
@@ -441,9 +429,42 @@ export default function LoginPage({ setCurrentPage, setUser, onAuth }) {
             width: '100%',
             height: '100%',
           }}>
+            {/* Mockly logo lockup */}
+            <div style={{ paddingTop: 'clamp(0px, 3vw, 48px)', marginBottom: 40 }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  width: 34, height: 34, borderRadius: '50%',
+                  border: '1px solid rgba(201,168,76,0.4)',
+                  background: 'rgba(201,168,76,0.1)',
+                  backdropFilter: 'blur(6px)',
+                }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(201,168,76,1)" strokeWidth="1.5" strokeLinecap="round">
+                    <rect x="9" y="2" width="6" height="11" rx="3" />
+                    <path d="M5 10a7 7 0 0 0 14 0" />
+                    <line x1="12" y1="17" x2="12" y2="21" />
+                    <line x1="9" y1="21" x2="15" y2="21" />
+                  </svg>
+                </span>
+                <span style={{
+                  fontFamily: "'Playfair Display', serif",
+                  fontSize: 22, fontWeight: 700, fontStyle: 'italic',
+                  color: 'var(--gold)', letterSpacing: '0.04em',
+                }}>
+                  Mockly
+                </span>
+              </div>
+              <p style={{
+                fontFamily: "'DM Mono', monospace",
+                fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase',
+                color: 'rgba(255,255,255,0.3)', marginLeft: 2,
+              }}>
+                Interview Intelligence
+              </p>
+            </div>
+
             <h2 style={{
               maxWidth: 560,
-              paddingTop: 'clamp(0px, 3vw, 48px)',
               fontSize: 'clamp(40px, 5vw, 64px)',
               fontWeight: 500,
               letterSpacing: '-0.05em',

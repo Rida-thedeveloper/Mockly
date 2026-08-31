@@ -4,6 +4,7 @@ import {
   useScroll, useTransform, useSpring,
   useInView,
 } from 'framer-motion';
+import ScrollStroke from '../components/ScrollStroke';
 import { ArrowRight, Mic, Activity, Clock, FileText, Sparkles, Target, Zap, Star, Brain, Volume2 } from 'lucide-react';
 
 // ── Reusable scroll-reveal wrapper ────────────────────────────────────────────
@@ -135,89 +136,6 @@ function TipCard({ icon: Icon, iconColor, title, tag, children }) {
   );
 }
 
-// ── Scroll-driven SVG path decoration ─────────────────────────────────────────
-function HeroSvgPath() {
-  const ref = useRef(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
-
-  const rawLength = useTransform(scrollYProgress, [0, 0.85], [0, 1]);
-  const pathLength = useSpring(rawLength, { stiffness: 60, damping: 20 });
-  const opacity = useTransform(scrollYProgress, [0, 0.05, 0.75, 1], [0, 0.5, 0.5, 0]);
-
-  // Dot position along path (approximate via offsetDistance)
-  const dotProgress = useTransform(scrollYProgress, [0, 0.85], ['0%', '100%']);
-
-  return (
-    <div
-      ref={ref}
-      style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden',
-        display: 'none',
-      }}
-    >
-      <style>{`@media (min-width: 768px) { .hero-svg-wrap { display: block !important; } }`}</style>
-      <div className="hero-svg-wrap" style={{ display: 'none', position: 'absolute', inset: 0 }}>
-        <svg
-          viewBox="0 0 900 460"
-          fill="none"
-          style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 900, height: '100%' }}
-        >
-          {/* Background ghost path */}
-          <path
-            d="M 30 340 C 120 160, 280 440, 450 220 C 620 0, 780 380, 870 200"
-            stroke="rgba(201,168,76,0.06)"
-            strokeWidth="2"
-            strokeLinecap="round"
-            fill="none"
-          />
-          {/* Animated drawing path */}
-          <motion.path
-            d="M 30 340 C 120 160, 280 440, 450 220 C 620 0, 780 380, 870 200"
-            stroke="var(--gold)"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            fill="none"
-            style={{ pathLength, opacity }}
-          />
-          {/* Second thinner path */}
-          <path
-            d="M 10 400 C 100 220, 260 480, 450 280 C 640 80, 800 440, 890 260"
-            stroke="rgba(201,168,76,0.04)"
-            strokeWidth="1"
-            strokeLinecap="round"
-            fill="none"
-          />
-          <motion.path
-            d="M 10 400 C 100 220, 260 480, 450 280 C 640 80, 800 440, 890 260"
-            stroke="var(--gold)"
-            strokeWidth="0.6"
-            strokeLinecap="round"
-            fill="none"
-            style={{ pathLength, opacity }}
-          />
-          {/* Glowing dot that travels along the main path */}
-          <motion.circle
-            cx="0" cy="0" r="4"
-            fill="var(--gold)"
-            filter="url(#glow)"
-            style={{
-              offsetPath: "path('M 30 340 C 120 160, 280 440, 450 220 C 620 0, 780 380, 870 200')",
-              offsetDistance: dotProgress,
-              opacity,
-            }}
-          />
-          <defs>
-            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="3" result="blur" />
-              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-            </filter>
-          </defs>
-        </svg>
-      </div>
-    </div>
-  );
-}
-
 // ── Section heading helper ────────────────────────────────────────────────────
 function SectionHeading({ eyebrow, title, subtitle }) {
   return (
@@ -265,15 +183,24 @@ export default function LandingPage({ setCurrentPage }) {
   ];
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div style={{ position: 'relative', minHeight: '100vh', isolation: 'isolate' }}>
+      <ScrollStroke
+        filterId="landing"
+        viewBox="0 0 1200 3200"
+        path="M600,0 C600,0 550,120 480,200 C410,280 320,260 280,340 C240,420 260,520 200,600 C140,680 60,700 40,800 C20,900 80,980 120,1060 C160,1140 180,1200 240,1280 C300,1360 400,1380 440,1460 C480,1540 460,1640 500,1720 C540,1800 620,1820 660,1900 C700,1980 680,2080 720,2160 C760,2240 840,2260 880,2340 C920,2420 900,2520 860,2600 C820,2680 740,2720 700,2800 C660,2880 640,2960 600,3040 C560,3120 520,3160 520,3200"
+        color="rgba(201,168,76,0.45)"
+        glowColor="rgba(201,168,76,0.18)"
+        dotColor="#C9A84C"
+        strokeWidth={2.5}
+        side="center"
+      />
 
       {/* ── Hero ─────────────────────────────────────────────────── */}
       <section style={{ position: 'relative', overflow: 'hidden', padding: '100px 24px 80px' }}>
-        <HeroSvgPath />
         <AnimatedOrb style={{ width: 600, height: 400, top: -100, left: '50%', transform: 'translateX(-50%)', background: 'radial-gradient(ellipse, rgba(201,168,76,0.07) 0%, transparent 70%)' }} />
         <AnimatedOrb style={{ width: 300, height: 300, bottom: 0, right: '10%', background: 'radial-gradient(ellipse, rgba(74,143,212,0.05) 0%, transparent 70%)' }} />
 
-        <div style={{ maxWidth: 760, margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 1 }}>
+        <div style={{ maxWidth: 760, margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 2 }}>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
