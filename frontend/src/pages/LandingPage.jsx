@@ -258,10 +258,10 @@ export default function LandingPage({ setCurrentPage }) {
   ];
 
   const stats = [
-    { value: "5", label: "Speech Metrics", sub: "analyzed per answer" },
-    { value: "Whisper", label: "Transcription", sub: "OpenAI model" },
-    { value: "RF Model", label: "Hesitation AI", sub: "trained classifier" },
-    { value: "Free", label: "No Signup", sub: "start instantly" },
+    { value: "Real-Time", label: "Speech Analysis", sub: "instant feedback per answer" },
+    { value: "Role-Based", label: "Smart Questions", sub: "tailored to your target job" },
+    { value: "AI-Scored", label: "Hesitation Detect", sub: "ML model, not rule-based" },
+    { value: "Zero", label: "Judgment Zone", sub: "practice freely, grow fast" },
   ];
 
   return (
