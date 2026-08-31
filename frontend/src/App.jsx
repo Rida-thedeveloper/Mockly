@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import IntroScreen from './components/IntroScreen';
 
 // 9 Frontend Pages
 import LandingPage from './pages/LandingPage';
@@ -21,6 +22,7 @@ const pageVariants = {
 };
 
 export default function App() {
+  const [introShown, setIntroShown] = useState(false);
   const [currentPage, setCurrentPage] = useState('landing');
 
   const [user, setUser] = useState({
@@ -94,6 +96,7 @@ export default function App() {
       className="min-h-screen flex flex-col selection:bg-indigo-600 selection:text-white"
       style={{ background: 'var(--obsidian)', color: 'var(--text-primary)' }}
     >
+      {!introShown && <IntroScreen onDone={() => setIntroShown(true)} />}
       <Navbar
         currentPage={currentPage}
         setCurrentPage={setCurrentPage}
