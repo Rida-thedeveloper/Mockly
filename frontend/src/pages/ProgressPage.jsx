@@ -1,107 +1,128 @@
 import React from 'react';
-import { BarChart2, TrendingUp, Award, Calendar, Database, ShieldCheck, ArrowRight } from 'lucide-react';
+import { TrendingUp, ArrowRight } from 'lucide-react';
 
 export default function ProgressPage({ setCurrentPage }) {
-  // Demo progress trajectory data (structured cleanly for easy DB replacement later)
   const progressData = [
-    { label: "Interview 1", score: 72, date: "Jul 20", role: "Data Analyst" },
-    { label: "Interview 2", score: 75, date: "Jul 28", role: "AI/ML Engineer" },
-    { label: "Interview 3", score: 81, date: "Aug 12", role: "Frontend Developer" },
-    { label: "Interview 4", score: 84, date: "Aug 18", role: "Software Engineer" }
+    { label: 'Interview 1', score: 72, date: 'Jul 20', role: 'Data Analyst' },
+    { label: 'Interview 2', score: 75, date: 'Jul 28', role: 'AI/ML Engineer' },
+    { label: 'Interview 3', score: 81, date: 'Aug 12', role: 'Frontend Developer' },
+    { label: 'Interview 4', score: 84, date: 'Aug 18', role: 'Software Engineer' },
   ];
 
   const maxScore = 100;
+  const delta = progressData[progressData.length - 1].score - progressData[0].score;
+
+  function barColor(score) {
+    if (score >= 80) return 'linear-gradient(to top, #2d9e84, var(--accent-teal))';
+    if (score >= 75) return 'linear-gradient(to top, #a07830, var(--gold))';
+    return 'linear-gradient(to top, #3a4a8a, var(--accent-blue))';
+  }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
-      
-      <div className="text-center space-y-2">
-        <div className="inline-block px-3 py-1 rounded-full bg-indigo-950/80 border border-indigo-800 text-indigo-300 text-xs font-semibold">
-          ANALYTICS & TRENDS
-        </div>
-        <h1 className="text-3xl font-extrabold text-white">Interview Progress</h1>
-        <p className="text-sm text-slate-400">
-          Track your overall performance trajectory across consecutive mock interviews.
+    <div className="max-w-5xl mx-auto px-4 py-12 space-y-10">
+
+      {/* Header */}
+      <div className="text-center space-y-3" style={{ animation: 'fade-up 0.5s ease both' }}>
+        <span className="tag-gold">ANALYTICS & TRENDS</span>
+        <h1 className="text-4xl font-bold mt-2"
+          style={{ fontFamily: "'Playfair Display', serif", color: 'var(--text-primary)' }}>
+          Interview Progress
+        </h1>
+        <p className="text-sm" style={{ color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>
+          Track your performance trajectory across consecutive mock sessions.
         </p>
       </div>
 
-      {/* Progress Chart Container */}
-      <div className="glass-panel p-8 rounded-3xl border border-slate-800 space-y-8">
-        
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
-          <div className="space-y-1">
-            <h2 className="text-xl font-bold text-white flex items-center space-x-2">
-              <TrendingUp className="w-5 h-5 text-emerald-400" />
-              <span>Score Improvement Trajectory</span>
-            </h2>
-            <p className="text-xs text-slate-400">
-              Demonstrates score growth over 4 recent interview sessions.
-            </p>
+      {/* Summary row */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4" style={{ animation: 'fade-up 0.5s 0.1s ease both' }}>
+        {[
+          { label: 'Total Sessions', value: progressData.length },
+          { label: 'Latest Score', value: `${progressData[progressData.length - 1].score}/100` },
+          { label: 'Score Growth', value: `+${delta} pts` },
+        ].map(({ label, value }) => (
+          <div key={label} className="card p-5 text-center space-y-1">
+            <p className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-muted)', fontFamily: "'DM Mono', monospace" }}>{label}</p>
+            <p className="text-3xl font-bold" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--gold)' }}>{value}</p>
           </div>
-
-          <div className="flex items-center space-x-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl text-xs text-emerald-400 font-mono">
-            <ShieldCheck className="w-4 h-4" />
-            <span>DB Sync Ready Data Format</span>
-          </div>
-        </div>
-
-        {/* Visual Bar Chart */}
-        <div className="space-y-6 pt-4">
-          <div className="grid grid-cols-4 gap-4 sm:gap-8 items-end h-64 border-b border-slate-800 pb-4 px-4">
-            {progressData.map((item, idx) => {
-              const heightPercent = (item.score / maxScore) * 100;
-              return (
-                <div key={idx} className="flex flex-col items-center h-full justify-end group">
-                  
-                  {/* Hover score tooltip */}
-                  <div className="mb-2 opacity-90 group-hover:opacity-100 transition-opacity">
-                    <span className="bg-indigo-600 text-white font-mono text-xs font-bold px-2.5 py-1 rounded-md shadow-md">
-                      {item.score}
-                    </span>
-                  </div>
-
-                  {/* Bar */}
-                  <div 
-                    className="w-full max-w-[60px] bg-gradient-to-t from-indigo-700 via-indigo-500 to-violet-400 rounded-t-xl transition-all duration-500 group-hover:brightness-125 shadow-lg shadow-indigo-500/20"
-                    style={{ height: `${heightPercent}%` }}
-                  />
-
-                  {/* Label & Date */}
-                  <div className="mt-3 text-center space-y-0.5">
-                    <p className="text-xs font-bold text-white">{item.label}</p>
-                    <p className="text-[10px] text-slate-400">{item.date}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Bottom Chart Legend */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-            {progressData.map((item, idx) => (
-              <div key={idx} className="bg-slate-900/80 border border-slate-800 p-3 rounded-xl space-y-1">
-                <span className="text-slate-400 font-medium">{item.label}</span>
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-white">{item.role}</span>
-                  <span className="font-mono text-indigo-400 font-bold">{item.score}/100</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Database Integration Notice Box */}
-        <div className="bg-indigo-950/40 border border-indigo-800/40 p-5 rounded-2xl flex items-start space-x-3 text-xs text-indigo-300">
-          <Database className="w-5 h-5 shrink-0 text-indigo-400 mt-0.5" />
-          <div className="space-y-1">
-            <p className="font-bold text-indigo-200">Database Replacement Ready</p>
-            <p className="text-indigo-300/80 leading-relaxed">
-              This chart uses demo data array (<code className="bg-indigo-950 px-1.5 py-0.5 rounded border border-indigo-800 text-indigo-200">progressData</code>). Later when SQLite/PostgreSQL is connected, replace this array with FastAPI <code className="bg-indigo-950 px-1.5 py-0.5 rounded border border-indigo-800 text-indigo-200">GET /api/progress</code> responses.
-            </p>
-          </div>
-        </div>
-
+        ))}
       </div>
+
+      {/* Bar chart */}
+      <div className="card p-8 space-y-8" style={{ animation: 'fade-up 0.5s 0.15s ease both' }}>
+        <div className="flex items-center justify-between pb-4" style={{ borderBottom: '1px solid var(--border)' }}>
+          <div className="flex items-center gap-2.5">
+            <TrendingUp className="w-4 h-4" style={{ color: 'var(--accent-teal)' }} />
+            <h2 className="font-semibold text-sm" style={{ color: 'var(--text-primary)', fontFamily: "'DM Sans', sans-serif" }}>
+              Score Improvement Trajectory
+            </h2>
+          </div>
+          <span className="tag-gold text-[10px]">DEMO DATA</span>
+        </div>
+
+        {/* Bars */}
+        <div className="grid grid-cols-4 gap-4 sm:gap-8 items-end px-4"
+          style={{ height: '240px', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+          {progressData.map((item, idx) => {
+            const heightPercent = (item.score / maxScore) * 100;
+            return (
+              <div key={idx} className="flex flex-col items-center h-full justify-end group">
+                {/* Score label */}
+                <div className="mb-2 px-2.5 py-1 rounded-md text-xs font-bold transition-all"
+                  style={{ background: 'var(--gold-dim)', color: 'var(--gold)', fontFamily: "'DM Mono', monospace",
+                    border: '1px solid rgba(201,168,76,0.25)', animation: `fade-up 0.5s ${0.2 + idx * 0.1}s ease both` }}>
+                  {item.score}
+                </div>
+                {/* Bar */}
+                <div
+                  className="w-full max-w-[56px] rounded-t-lg transition-all duration-700 group-hover:brightness-110"
+                  style={{
+                    height: `${heightPercent}%`,
+                    background: barColor(item.score),
+                    boxShadow: '0 0 16px rgba(201,168,76,0.15)',
+                    animation: `fade-up 0.6s ${0.25 + idx * 0.1}s ease both`,
+                  }}
+                />
+              </div>
+            );
+          })}
+        </div>
+
+        {/* X-axis labels */}
+        <div className="grid grid-cols-4 gap-4 sm:gap-8 px-4 text-center">
+          {progressData.map((item, idx) => (
+            <div key={idx} className="space-y-0.5">
+              <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>{item.label}</p>
+              <p className="text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: "'DM Mono', monospace" }}>{item.date}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Per-session legend cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4" style={{ animation: 'fade-up 0.5s 0.2s ease both' }}>
+        {progressData.map((item, idx) => (
+          <div key={idx} className="card p-4 space-y-2">
+            <p className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-muted)', fontFamily: "'DM Mono', monospace" }}>
+              {item.label}
+            </p>
+            <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)', fontFamily: "'DM Sans', sans-serif" }}>{item.role}</p>
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: "'DM Mono', monospace" }}>{item.date}</span>
+              <span className="text-sm font-bold" style={{ color: 'var(--gold)', fontFamily: "'Playfair Display', serif" }}>{item.score}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* CTA */}
+      <div className="flex justify-center" style={{ animation: 'fade-up 0.5s 0.3s ease both' }}>
+        <button onClick={() => setCurrentPage('setup')}
+          className="btn-gold px-8 py-3 font-semibold text-sm flex items-center gap-2">
+          <span>Practice Another Session</span>
+          <ArrowRight className="w-4 h-4" />
+        </button>
+      </div>
+
     </div>
   );
 }

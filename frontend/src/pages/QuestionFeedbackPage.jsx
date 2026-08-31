@@ -1,260 +1,251 @@
 import React from 'react';
-import { Award, Clock, Activity, ArrowLeft, ArrowRight, Zap, MessageSquare, Repeat2, AlertCircle, CheckCircle } from 'lucide-react';
+import { Award, Clock, Activity, ArrowLeft, ArrowRight, Zap, MessageSquare, CheckCircle, AlertCircle } from 'lucide-react';
 
-// ── Simple WPM → pace label ───────────────────────────────────────────────────
 function paceBadge(wpm) {
   if (wpm == null) return null;
-  if (wpm < 110) return { label: 'Slow', color: 'text-amber-400' };
-  if (wpm > 160) return { label: 'Fast', color: 'text-rose-400' };
-  return { label: 'Normal', color: 'text-emerald-400' };
+  if (wpm < 110) return { label: 'Slow', color: '#d4a84c' };
+  if (wpm > 160) return { label: 'Fast', color: 'var(--accent-rose)' };
+  return { label: 'Normal', color: 'var(--accent-teal)' };
 }
 
-// ── Hesitation colour ─────────────────────────────────────────────────────────
 function hesitationColor(pred) {
-  if (pred === 'Low') return 'text-emerald-400';
-  if (pred === 'Medium') return 'text-amber-400';
-  if (pred === 'High') return 'text-rose-400';
-  return 'text-slate-400';
+  if (pred === 'Low')    return 'var(--accent-teal)';
+  if (pred === 'Medium') return '#d4a84c';
+  if (pred === 'High')   return 'var(--accent-rose)';
+  return 'var(--text-muted)';
+}
+
+function MetricCard({ label, icon: Icon, iconColor, value, unit, sub }) {
+  return (
+    <div className="card p-5 space-y-2">
+      <div className="flex items-center gap-2">
+        <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: iconColor }} />
+        <span className="text-[10px] uppercase tracking-widest font-semibold"
+          style={{ color: 'var(--text-muted)', fontFamily: "'DM Mono', monospace" }}>
+          {label}
+        </span>
+      </div>
+      <div className="flex items-baseline gap-1.5">
+        <span className="text-3xl font-bold"
+          style={{ fontFamily: "'Playfair Display', serif", color: 'var(--text-primary)' }}>
+          {value ?? '—'}
+        </span>
+        {unit && (
+          <span className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: "'DM Mono', monospace" }}>{unit}</span>
+        )}
+      </div>
+      {sub && (
+        <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }} title={sub}>
+          {sub}
+        </p>
+      )}
+    </div>
+  );
 }
 
 export default function QuestionFeedbackPage({ setCurrentPage, recordedAnswers, selectedAnswerIdx }) {
   const answerCount = Object.keys(recordedAnswers).length;
-
-  // Safely derive the selected answer's analysis
-  const answer = selectedAnswerIdx != null ? recordedAnswers[selectedAnswerIdx] : null;
-  const features = answer?.features ?? null;
+  const answer     = selectedAnswerIdx != null ? recordedAnswers[selectedAnswerIdx] : null;
+  const features   = answer?.features ?? null;
   const hesitation = answer?.hesitation ?? null;
-  const feedback = answer?.feedback ?? null;
+  const feedback   = answer?.feedback ?? null;
   const transcript = answer?.transcript ?? null;
-
-  const hasData = features != null;
-
-  // WPM helpers
-  const wpm = features?.wpm;
-  const pace = paceBadge(wpm);
+  const hasData    = features != null;
+  const wpm        = features?.wpm;
+  const pace       = paceBadge(wpm);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+    <div className="max-w-4xl mx-auto px-4 py-12 space-y-10">
 
       {/* Header */}
-      <div className="text-center space-y-2">
-        <div className="inline-block px-3 py-1 rounded-full bg-indigo-950/80 border border-indigo-800 text-indigo-300 text-xs font-semibold">
-          QUESTION ANALYSIS
-        </div>
-        <h1 className="text-3xl font-extrabold text-white">Answer Analysis</h1>
-        <p className="text-sm text-slate-400">
+      <div className="text-center space-y-3" style={{ animation: 'fade-up 0.5s ease both' }}>
+        <span className="tag-gold">QUESTION ANALYSIS</span>
+        <h1 className="text-4xl font-bold mt-2"
+          style={{ fontFamily: "'Playfair Display', serif", color: 'var(--text-primary)' }}>
+          Answer Analysis
+        </h1>
+        <p className="text-sm" style={{ color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>
           Per-question verbal performance indicators from the ML pipeline.
         </p>
       </div>
 
-      <div className="glass-panel p-8 rounded-3xl border border-slate-800 space-y-8">
-
-        {/* ── No data guard ── */}
-        {!hasData ? (
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-8 text-center space-y-3">
-            <AlertCircle className="w-8 h-8 text-slate-500 mx-auto" />
-            <p className="text-slate-300 font-semibold">Analysis not available</p>
-            <p className="text-xs text-slate-500">
-              Submit an answer on the interview screen and click "View Question Feedback" to see your results here.
+      {/* No-data guard */}
+      {!hasData ? (
+        <div className="card p-12 text-center space-y-5" style={{ animation: 'fade-up 0.5s 0.1s ease both' }}>
+          <AlertCircle className="w-10 h-10 mx-auto" style={{ color: 'var(--text-muted)' }} />
+          <div className="space-y-2">
+            <p className="font-semibold" style={{ color: 'var(--text-primary)', fontFamily: "'DM Sans', sans-serif" }}>
+              Analysis not available
             </p>
-            <button
-              onClick={() => setCurrentPage('interview')}
-              className="mt-2 px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-xl transition-colors inline-flex items-center space-x-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back to Interview</span>
-            </button>
+            <p className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
+              Submit an answer on the interview screen and click "View Question Feedback" to see results here.
+            </p>
           </div>
-        ) : (
-          <>
-            {/* ── Metric Cards ── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-
-              {/* Answer Relevance */}
-              <div className="bg-slate-900/90 border border-slate-800 p-6 rounded-2xl space-y-3">
-                <span className="text-xs text-slate-400 font-semibold block">AI Semantic Relevance</span>
-                {answer?.relevance ? (
-                  <>
-                    <div className="text-3xl font-extrabold text-white font-mono">
-                      {answer.relevance.score}%
-                    </div>
-                    <div className={`text-sm font-bold ${answer.relevance.score > 70 ? 'text-emerald-400' : answer.relevance.score > 40 ? 'text-amber-400' : 'text-rose-400'}`}>
-                      {answer.relevance.score > 70 ? 'High' : answer.relevance.score > 40 ? 'Moderate' : 'Low'}
-                    </div>
-                    <div className="text-[11px] text-slate-500 leading-snug">
-                      Sentence Transformer similarity
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="text-2xl font-extrabold text-slate-500 font-mono">N/A</div>
-                    <div className="text-[11px] text-slate-500 leading-snug">
-                      Requires question and transcript.
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Speaking Pace */}
-              <div className="bg-slate-900/90 border border-slate-800 p-6 rounded-2xl space-y-3">
-                <span className="text-xs text-slate-400 font-semibold block flex items-center gap-1">
-                  <Zap className="w-3.5 h-3.5 text-indigo-400 inline" /> Speaking Pace
-                </span>
-                <div className="text-3xl font-extrabold text-white font-mono">
-                  {wpm != null ? `${wpm}` : '—'}
-                  {wpm != null && <span className="text-base font-semibold text-slate-400 ml-1">WPM</span>}
-                </div>
-                {pace && (
-                  <div className={`text-sm font-bold ${pace.color}`}>{pace.label}</div>
-                )}
-                <div className="text-[11px] text-slate-500">words per minute</div>
-              </div>
-
-              {/* Hesitation Marker */}
-              <div className="bg-slate-900/90 border border-slate-800 p-6 rounded-2xl space-y-3">
-                <span className="text-xs text-slate-400 font-semibold block flex items-center gap-1">
-                  <Activity className="w-3.5 h-3.5 text-violet-400 inline" /> Hesitation Marker
-                </span>
-                {hesitation && !hesitation.error ? (
-                  <>
-                    <div className={`text-2xl font-extrabold font-mono ${hesitationColor(hesitation.prediction)}`}>
-                      {hesitation.prediction ?? '—'}
-                    </div>
-                    {hesitation.probabilities && (
-                      <div className="grid grid-cols-3 gap-1 pt-1 text-center text-[10px]">
-                        {['Low', 'Medium', 'High'].map(lbl => (
-                          <div key={lbl} className="bg-slate-800 rounded-lg p-1.5">
-                            <span className="text-slate-400 block">{lbl}</span>
-                            <span className="text-white font-bold">
-                              {hesitation.probabilities[lbl] != null
-                                ? `${(hesitation.probabilities[lbl] * 100).toFixed(0)}%`
-                                : '—'}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <div className="text-[11px] text-slate-500 font-mono">{hesitation.model}</div>
-                  </>
-                ) : (
-                  <div className="text-slate-500 text-sm">—</div>
-                )}
-              </div>
-
-              {/* Filler Words */}
-              <div className="bg-slate-900/90 border border-slate-800 p-6 rounded-2xl space-y-3">
-                <span className="text-xs text-slate-400 font-semibold block flex items-center gap-1">
-                  <MessageSquare className="w-3.5 h-3.5 text-rose-400 inline" /> Filler Words
-                </span>
-                <div className="text-3xl font-extrabold text-white font-mono">
-                  {features.filler_count ?? '—'}
-                </div>
-                <div className="text-[11px] text-slate-500">
-                  {features.fillers?.length
-                    ? `Detected: ${features.fillers.join(', ')}`
-                    : 'None detected'}
-                </div>
-              </div>
-
-              {/* Pauses & Silences */}
-              <div className="bg-slate-900/90 border border-slate-800 p-6 rounded-2xl space-y-3">
-                <span className="text-xs text-slate-400 font-semibold block flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5 text-cyan-400 inline" /> Pauses &amp; Silences
-                </span>
-                <div className="text-3xl font-extrabold text-white font-mono">
-                  {features.pause_count ?? '—'}
-                </div>
-                <div className="text-[11px] text-slate-500 space-y-0.5">
-                  {features.average_pause != null && (
-                    <div>Avg: {features.average_pause}s</div>
-                  )}
-                  {features.longest_pause != null && (
-                    <div>Longest: {features.longest_pause}s</div>
-                  )}
-                </div>
-              </div>
-
-              {/* Audio Captured */}
-              <div className="bg-slate-900/90 border border-slate-800 p-6 rounded-2xl space-y-3">
-                <span className="text-xs text-slate-400 font-semibold block flex items-center gap-1">
-                  <CheckCircle className="w-3.5 h-3.5 text-emerald-400 inline" /> Audio Captured
-                </span>
-                <div className="text-2xl font-bold text-indigo-400 font-mono">{answerCount} Answers</div>
-                <div className="text-[11px] text-slate-500">Stored in frontend state</div>
-              </div>
-
-            </div>
-
-            {/* ── Transcript ── */}
-            {transcript && (
-              <div className="border-t border-slate-800/80 pt-6 space-y-2">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                  Transcript
-                </span>
-                <div className="bg-slate-950/60 border border-slate-800 p-4 rounded-xl">
-                  <p className="text-slate-200 text-sm leading-relaxed italic">"{transcript}"</p>
-                </div>
-              </div>
-            )}
-
-            {/* ── Personalized Feedback ── */}
-            {feedback && (
-              <div className="border-t border-slate-800/80 pt-6 space-y-3">
-                <div className="flex items-center space-x-2">
-                  <MessageSquare className="w-4 h-4 text-emerald-400" />
-                  <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
-                    Personalized Feedback
-                  </span>
-                </div>
-                {feedback.summary ? (
-                  <div className="bg-slate-950/60 border border-slate-800 p-4 rounded-xl space-y-3">
-                    <p className="text-sm font-semibold text-slate-200">{feedback.summary}</p>
-                    {feedback.suggestions?.length > 0 && (
-                      <div className="space-y-1.5 border-t border-slate-800/60 pt-2.5">
-                        <span className="text-[11px] font-semibold text-slate-400 block">
-                          Suggestions for Improvement:
-                        </span>
-                        <ul className="space-y-1.5 text-xs text-slate-300">
-                          {feedback.suggestions.map((sug, idx) => (
-                            <li key={idx} className="flex items-start space-x-2">
-                              <span className="text-emerald-400 font-bold mt-0.5">•</span>
-                              <span className="leading-relaxed">{sug}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="bg-slate-950/40 border border-slate-800/60 p-3 rounded-xl text-xs text-slate-400 italic">
-                    Personalized feedback is temporarily unavailable.
-                  </div>
-                )}
-              </div>
-            )}
-          </>
-        )}
-
-        {/* ── Action Buttons ── */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-800/80 pt-6">
-          <button
-            onClick={() => setCurrentPage('interview')}
-            className="w-full sm:w-auto px-6 py-3 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-semibold text-sm rounded-xl flex items-center justify-center space-x-2 transition-colors"
-          >
+          <button onClick={() => setCurrentPage('interview')}
+            className="btn-gold mx-auto px-6 py-2.5 text-sm font-semibold flex items-center gap-2 w-fit">
             <ArrowLeft className="w-4 h-4" />
-            <span>Back to Interview Room</span>
-          </button>
-
-          <button
-            onClick={() => setCurrentPage('report')}
-            className="w-full sm:w-auto px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-indigo-600/30 flex items-center justify-center space-x-2 transition-colors"
-          >
-            <span>View Full Final Report</span>
-            <ArrowRight className="w-4 h-4" />
+            <span>Back to Interview</span>
           </button>
         </div>
+      ) : (
+        <div className="space-y-8" style={{ animation: 'fade-up 0.5s 0.1s ease both' }}>
 
+          {/* Metrics grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Relevance */}
+            <div className="card p-5 space-y-2">
+              <div className="flex items-center gap-2">
+                <Award className="w-3.5 h-3.5" style={{ color: 'var(--gold)' }} />
+                <span className="text-[10px] uppercase tracking-widest font-semibold"
+                  style={{ color: 'var(--text-muted)', fontFamily: "'DM Mono', monospace" }}>
+                  AI Semantic Relevance
+                </span>
+              </div>
+              {answer?.relevance ? (
+                <>
+                  <p className="text-3xl font-bold" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--text-primary)' }}>
+                    {answer.relevance.score}%
+                  </p>
+                  <p className="text-xs font-semibold" style={{
+                    color: answer.relevance.score > 70 ? 'var(--accent-teal)' : answer.relevance.score > 40 ? '#d4a84c' : 'var(--accent-rose)',
+                    fontFamily: "'DM Mono', monospace"
+                  }}>
+                    {answer.relevance.score > 70 ? 'High' : answer.relevance.score > 40 ? 'Moderate' : 'Low'} Relevance
+                  </p>
+                </>
+              ) : (
+                <p className="text-3xl font-bold" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--text-muted)' }}>N/A</p>
+              )}
+            </div>
+
+            {/* Speaking Pace */}
+            <div className="card p-5 space-y-2">
+              <div className="flex items-center gap-2">
+                <Zap className="w-3.5 h-3.5" style={{ color: 'var(--accent-blue)' }} />
+                <span className="text-[10px] uppercase tracking-widest font-semibold"
+                  style={{ color: 'var(--text-muted)', fontFamily: "'DM Mono', monospace" }}>
+                  Speaking Pace
+                </span>
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-3xl font-bold" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--text-primary)' }}>
+                  {wpm ?? '—'}
+                </span>
+                {wpm != null && <span className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: "'DM Mono', monospace" }}>WPM</span>}
+              </div>
+              {pace && (
+                <p className="text-xs font-semibold" style={{ color: pace.color, fontFamily: "'DM Mono', monospace" }}>
+                  {pace.label}
+                </p>
+              )}
+            </div>
+
+            {/* Hesitation */}
+            <div className="card p-5 space-y-2">
+              <div className="flex items-center gap-2">
+                <Activity className="w-3.5 h-3.5" style={{ color: '#a078d0' }} />
+                <span className="text-[10px] uppercase tracking-widest font-semibold"
+                  style={{ color: 'var(--text-muted)', fontFamily: "'DM Mono', monospace" }}>
+                  Hesitation Level
+                </span>
+              </div>
+              {hesitation && !hesitation.error ? (
+                <>
+                  <p className="text-3xl font-bold" style={{ fontFamily: "'Playfair Display', serif", color: hesitationColor(hesitation.prediction) }}>
+                    {hesitation.prediction ?? '—'}
+                  </p>
+                  {hesitation.probabilities && (
+                    <div className="grid grid-cols-3 gap-1 pt-1 text-center">
+                      {['Low', 'Medium', 'High'].map(lbl => (
+                        <div key={lbl} className="rounded-md p-1.5"
+                          style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+                          <span className="block text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: "'DM Mono', monospace" }}>{lbl}</span>
+                          <span className="text-xs font-bold" style={{ color: 'var(--text-primary)', fontFamily: "'DM Mono', monospace" }}>
+                            {hesitation.probabilities[lbl] != null
+                              ? `${(hesitation.probabilities[lbl] * 100).toFixed(0)}%`
+                              : '—'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-3xl font-bold" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--text-muted)' }}>—</p>
+              )}
+            </div>
+
+            <MetricCard label="Filler Words" icon={MessageSquare} iconColor="var(--accent-rose)"
+              value={features.filler_count}
+              sub={features.fillers?.length ? `Detected: ${features.fillers.join(', ')}` : 'None detected'} />
+
+            <MetricCard label="Pauses & Silences" icon={Clock} iconColor="var(--accent-teal)"
+              value={features.pause_count}
+              sub={features.average_pause != null ? `Avg ${features.average_pause}s${features.longest_pause ? ` · Max ${features.longest_pause}s` : ''}` : undefined} />
+
+            <MetricCard label="Audio Captured" icon={CheckCircle} iconColor="var(--gold)"
+              value={answerCount} unit="answers"
+              sub="Stored in frontend state" />
+          </div>
+
+          {/* Transcript */}
+          {transcript && (
+            <div className="card p-6 space-y-3">
+              <p className="text-[10px] uppercase tracking-widest font-semibold"
+                style={{ color: 'var(--text-muted)', fontFamily: "'DM Mono', monospace" }}>
+                Transcript
+              </p>
+              <p className="text-sm leading-relaxed italic" style={{ color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>
+                "{transcript}"
+              </p>
+            </div>
+          )}
+
+          {/* Personalized Feedback */}
+          {feedback?.summary && (
+            <div className="card p-6 space-y-4"
+              style={{ borderLeft: '3px solid var(--accent-teal)' }}>
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-4 h-4" style={{ color: 'var(--accent-teal)' }} />
+                <span className="text-[10px] uppercase tracking-widest font-semibold"
+                  style={{ color: 'var(--accent-teal)', fontFamily: "'DM Mono', monospace" }}>
+                  Personalized Feedback
+                </span>
+              </div>
+              <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)', fontFamily: "'DM Sans', sans-serif" }}>
+                {feedback.summary}
+              </p>
+              {feedback.suggestions?.length > 0 && (
+                <ul className="space-y-2 pt-2" style={{ borderTop: '1px solid var(--border)' }}>
+                  {feedback.suggestions.map((sug, idx) => (
+                    <li key={idx} className="flex items-start gap-2.5 text-sm"
+                      style={{ color: 'var(--text-secondary)', fontFamily: "'DM Sans', sans-serif" }}>
+                      <span style={{ color: 'var(--accent-teal)' }}>→</span>
+                      {sug}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+
+        </div>
+      )}
+
+      {/* Action buttons */}
+      <div className="flex flex-col sm:flex-row gap-3 pt-2" style={{ animation: 'fade-up 0.5s 0.25s ease both' }}>
+        <button onClick={() => setCurrentPage('interview')}
+          className="btn-ghost flex-1 py-3 flex items-center justify-center gap-2 text-sm font-semibold">
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back to Interview Room</span>
+        </button>
+        <button onClick={() => setCurrentPage('report')}
+          className="btn-gold flex-1 py-3 flex items-center justify-center gap-2 text-sm font-semibold">
+          <span>View Final Report</span>
+          <ArrowRight className="w-4 h-4" />
+        </button>
       </div>
+
     </div>
   );
 }

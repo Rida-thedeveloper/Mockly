@@ -1,43 +1,54 @@
-import React from 'react';
-import { Mic, BarChart2, History, LayoutDashboard, Settings, User, LogIn, Award } from 'lucide-react';
+import React, { useState } from 'react';
+import { Mic, BarChart2, History, LayoutDashboard, Settings, LogIn, Award, Menu, X } from 'lucide-react';
 
 export default function Navbar({ currentPage, setCurrentPage, user }) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
   const navItems = [
-    { id: 'landing', label: 'Home', icon: Mic },
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'setup', label: 'New Interview', icon: Settings },
-    { id: 'interview', label: 'Interview Room', icon: Mic },
-    { id: 'feedback', label: 'Feedback', icon: Award },
-    { id: 'report', label: 'Final Report', icon: Award },
+    { id: 'setup', label: 'New Session', icon: Settings },
     { id: 'history', label: 'History', icon: History },
     { id: 'progress', label: 'Progress', icon: BarChart2 },
   ];
 
   return (
-    <header className="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+    <header style={{
+      position: 'sticky',
+      top: 0,
+      zIndex: 50,
+      background: 'rgba(10,10,12,0.88)',
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
+      borderBottom: '1px solid rgba(255,255,255,0.06)',
+    }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64 }}>
 
-          {/* Logo & Brand */}
-          <div
+          {/* Logo */}
+          <button
             onClick={() => setCurrentPage('landing')}
-            className="flex items-center space-x-3 cursor-pointer group"
+            style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
-              <Mic className="w-5 h-5 text-white" />
+            <div style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: 'linear-gradient(135deg, rgba(201,168,76,0.15) 0%, rgba(201,168,76,0.05) 100%)',
+              border: '1px solid rgba(201,168,76,0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Mic size={16} color="var(--gold)" />
             </div>
-            <div>
-              <span className="text-xl font-bold bg-gradient-to-r from-white via-slate-100 to-indigo-200 bg-clip-text text-transparent">
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 20, color: 'var(--text-primary)', lineHeight: 1 }}>
                 Mockly
-              </span>
-              <span className="hidden sm:inline-block text-[10px] text-indigo-400 font-mono ml-2 px-1.5 py-0.5 rounded bg-indigo-950/60 border border-indigo-800/50">
-                FOUNDATION DAY 1
-              </span>
+              </div>
+              <div style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.12em', fontFamily: 'DM Mono, monospace', marginTop: 2 }}>
+                AI INTERVIEW COACH
+              </div>
             </div>
-          </div>
+          </button>
 
-          {/* Navigation Links */}
-          <nav className="hidden lg:flex items-center space-x-1">
+          {/* Desktop Nav */}
+          <nav style={{ display: 'flex', alignItems: 'center', gap: 4 }} className="desktop-nav">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = currentPage === item.id;
@@ -45,58 +56,113 @@ export default function Navbar({ currentPage, setCurrentPage, user }) {
                 <button
                   key={item.id}
                   onClick={() => setCurrentPage(item.id)}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${isActive
-                      ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-                    }`}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 7,
+                    padding: '7px 14px', borderRadius: 8,
+                    background: isActive ? 'rgba(201,168,76,0.1)' : 'transparent',
+                    border: isActive ? '1px solid rgba(201,168,76,0.2)' : '1px solid transparent',
+                    color: isActive ? 'var(--gold-light)' : 'var(--text-muted)',
+                    fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    fontFamily: "'DM Sans', sans-serif",
+                  }}
+                  onMouseEnter={e => { if (!isActive) { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.background = 'var(--surface-2)'; }}}
+                  onMouseLeave={e => { if (!isActive) { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent'; }}}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-400' : 'text-slate-400'}`} />
-                  <span>{item.label}</span>
+                  <Icon size={14} />
+                  {item.label}
                 </button>
               );
             })}
           </nav>
 
-          {/* User Profile / Login Action */}
-          <div className="flex items-center space-x-3">
-            {user ? (
-              <div
+          {/* Right Actions */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button
+              onClick={() => setCurrentPage('setup')}
+              className="btn-gold"
+              style={{ padding: '8px 18px', fontSize: 13, borderRadius: 8 }}
+            >
+              <Mic size={13} />
+              Start Interview
+            </button>
+
+            {user && (
+              <button
                 onClick={() => setCurrentPage('dashboard')}
-                className="flex items-center space-x-2 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 rounded-full px-3 py-1.5 cursor-pointer transition-colors"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  background: 'var(--surface-2)', border: '1px solid var(--border)',
+                  borderRadius: 999, padding: '5px 12px 5px 5px',
+                  cursor: 'pointer', transition: 'border-color 0.15s ease',
+                }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--border-hover)'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
               >
-                <div className="w-7 h-7 rounded-full bg-indigo-600/30 border border-indigo-400/30 flex items-center justify-center text-indigo-300 font-semibold text-xs">
+                <div style={{
+                  width: 28, height: 28, borderRadius: '50%',
+                  background: 'linear-gradient(135deg, rgba(201,168,76,0.3), rgba(201,168,76,0.1))',
+                  border: '1px solid rgba(201,168,76,0.3)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 12, fontWeight: 700, color: 'var(--gold)',
+                  fontFamily: 'DM Sans, sans-serif',
+                }}>
                   {user.name.charAt(0)}
                 </div>
-                <span className="text-xs font-medium text-slate-200">{user.name}</span>
-              </div>
-            ) : (
-              <button
-                onClick={() => setCurrentPage('login')}
-                className="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow-md shadow-indigo-600/20 transition-all"
-              >
-                <LogIn className="w-3.5 h-3.5" />
-                <span>Login</span>
+                <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)' }}>
+                  {user.name.split(' ')[0]}
+                </span>
               </button>
             )}
+
+            {/* Mobile menu toggle */}
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              style={{ display: 'none', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: 4 }}
+              className="mobile-menu-toggle"
+            >
+              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile Bar */}
-      <div className="lg:hidden flex overflow-x-auto px-4 py-2 bg-slate-950/80 border-t border-slate-800/60 space-x-2 scrollbar-none">
-        {navItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => setCurrentPage(item.id)}
-            className={`whitespace-nowrap px-3 py-1.5 rounded-md text-xs font-medium ${currentPage === item.id
-                ? 'bg-indigo-600 text-white'
-                : 'text-slate-400 bg-slate-900 border border-slate-800'
-              }`}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
+      {/* Mobile Drawer */}
+      {mobileOpen && (
+        <div style={{
+          background: 'var(--charcoal)', borderTop: '1px solid var(--border)',
+          padding: '12px 24px 16px',
+        }}>
+          {navItems.map(item => {
+            const Icon = item.icon;
+            const isActive = currentPage === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => { setCurrentPage(item.id); setMobileOpen(false); }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                  padding: '10px 12px', borderRadius: 8,
+                  background: isActive ? 'var(--gold-dim)' : 'transparent',
+                  border: 'none', color: isActive ? 'var(--gold-light)' : 'var(--text-secondary)',
+                  fontSize: 14, fontWeight: 500, cursor: 'pointer', marginBottom: 2,
+                  fontFamily: 'DM Sans, sans-serif',
+                }}
+              >
+                <Icon size={15} />
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      <style>{`
+        @media (max-width: 768px) {
+          .desktop-nav { display: none !important; }
+          .mobile-menu-toggle { display: flex !important; }
+        }
+      `}</style>
     </header>
   );
 }

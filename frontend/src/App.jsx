@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 
@@ -13,17 +14,20 @@ import FinalReportPage from './pages/FinalReportPage';
 import HistoryPage from './pages/HistoryPage';
 import ProgressPage from './pages/ProgressPage';
 
+const pageVariants = {
+  initial: { opacity: 0, y: 18 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.25, 0.46, 0.45, 0.94] } },
+  exit: { opacity: 0, y: -10, transition: { duration: 0.22, ease: 'easeIn' } },
+};
+
 export default function App() {
-  // Page Routing State
   const [currentPage, setCurrentPage] = useState('landing');
 
-  // User Auth Demo State
   const [user, setUser] = useState({
     name: 'Rida Fatima',
     email: 'rida@example.com'
   });
 
-  // Interview Setup State
   const [interviewSetup, setInterviewSetup] = useState({
     role: 'Software Engineer',
     difficulty: 'Intermediate',
@@ -31,24 +35,17 @@ export default function App() {
     questionCount: 5
   });
 
-  // Recorded Audio Answers State (Question Index -> Audio Object)
   const [recordedAnswers, setRecordedAnswers] = useState({});
-
-  // Tracks which question's analysis to show on the feedback page
   const [selectedAnswerIdx, setSelectedAnswerIdx] = useState(null);
 
-  // Render Page Content based on active state
   const renderPage = () => {
     switch (currentPage) {
       case 'landing':
         return <LandingPage setCurrentPage={setCurrentPage} />;
-
       case 'login':
         return <LoginPage setCurrentPage={setCurrentPage} setUser={setUser} />;
-
       case 'dashboard':
         return <DashboardPage setCurrentPage={setCurrentPage} user={user} />;
-
       case 'setup':
         return (
           <SetupPage
@@ -57,7 +54,6 @@ export default function App() {
             setInterviewSetup={setInterviewSetup}
           />
         );
-
       case 'interview':
         return (
           <InterviewScreenPage
@@ -69,7 +65,6 @@ export default function App() {
             selectedAnswerIdx={selectedAnswerIdx}
           />
         );
-
       case 'feedback':
         return (
           <QuestionFeedbackPage
@@ -78,7 +73,6 @@ export default function App() {
             selectedAnswerIdx={selectedAnswerIdx}
           />
         );
-
       case 'report':
         return (
           <FinalReportPage
@@ -86,33 +80,40 @@ export default function App() {
             recordedAnswers={recordedAnswers}
           />
         );
-
       case 'history':
         return <HistoryPage setCurrentPage={setCurrentPage} />;
-
       case 'progress':
         return <ProgressPage setCurrentPage={setCurrentPage} />;
-
       default:
         return <LandingPage setCurrentPage={setCurrentPage} />;
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-indigo-600 selection:text-white">
-      {/* Top Navbar */}
+    <div
+      className="min-h-screen flex flex-col selection:bg-indigo-600 selection:text-white"
+      style={{ background: 'var(--obsidian)', color: 'var(--text-primary)' }}
+    >
       <Navbar
         currentPage={currentPage}
         setCurrentPage={setCurrentPage}
         user={user}
       />
 
-      {/* Main Page View Container */}
       <main className="flex-1">
-        {renderPage()}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentPage}
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+          >
+            {renderPage()}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
-      {/* Footer */}
       <Footer setCurrentPage={setCurrentPage} />
     </div>
   );

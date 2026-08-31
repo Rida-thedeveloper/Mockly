@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Briefcase, Sliders, Hash, ArrowRight, Play, Check, ShieldCheck } from 'lucide-react';
+import { Briefcase, Sliders, Hash, ArrowRight, Play, Check, ChevronRight } from 'lucide-react';
 
 export default function SetupPage({ setCurrentPage, interviewSetup, setInterviewSetup }) {
   const [role, setRole] = useState(interviewSetup.role || 'Software Engineer');
@@ -7,161 +7,196 @@ export default function SetupPage({ setCurrentPage, interviewSetup, setInterview
   const [type, setType] = useState(interviewSetup.type || 'Technical');
   const [questionCount, setQuestionCount] = useState(interviewSetup.questionCount || 5);
 
-  const roles = [
-    "Software Engineer",
-    "Frontend Developer",
-    "Backend Developer",
-    "AI/ML Engineer",
-    "Data Analyst"
+  const roles = ["Software Engineer", "Frontend Developer", "Backend Developer", "AI/ML Engineer", "Data Analyst"];
+  const difficulties = [
+    { id: "Beginner", desc: "Foundational concepts" },
+    { id: "Intermediate", desc: "Real-world depth" },
+    { id: "Advanced", desc: "Senior-level rigor" },
   ];
-
-  const difficulties = ["Beginner", "Intermediate", "Advanced"];
-  const types = ["Technical", "Behavioral", "Mixed"];
+  const types = [
+    { id: "Technical", desc: "Coding & systems" },
+    { id: "Behavioral", desc: "Soft skills & stories" },
+    { id: "Mixed", desc: "Both question types" },
+  ];
   const counts = [5, 10];
 
   const handleStart = () => {
-    setInterviewSetup({
-      role,
-      difficulty,
-      type,
-      questionCount: Number(questionCount)
-    });
+    setInterviewSetup({ role, difficulty, type, questionCount: Number(questionCount) });
     setCurrentPage('interview');
   };
 
+  const SectionLabel = ({ icon: Icon, children, color = 'var(--gold)' }) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+      <Icon size={14} color={color} />
+      <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'DM Mono, monospace' }}>
+        {children}
+      </span>
+    </div>
+  );
+
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
-      
-      <div className="text-center space-y-2">
-        <div className="inline-block px-3 py-1 rounded-full bg-indigo-950/80 border border-indigo-800 text-indigo-300 text-xs font-semibold">
-          CONFIGURATION
-        </div>
-        <h1 className="text-3xl font-extrabold text-white">Set Up Your Interview</h1>
-        <p className="text-sm text-slate-400">
-          Customize your target job role, difficulty, and question count before recording.
+    <div style={{ maxWidth: 720, margin: '0 auto', padding: '48px 24px' }}>
+
+      {/* Header */}
+      <div className="animate-fade-up" style={{ marginBottom: 40 }}>
+        <div className="tag-gold" style={{ marginBottom: 14 }}>Session Setup</div>
+        <h1 className="font-display" style={{ fontSize: 'clamp(28px, 4vw, 38px)', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 10 }}>
+          Configure your interview
+        </h1>
+        <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0 }}>
+          Tailor the difficulty, format, and length to match your target role and preparation level.
         </p>
       </div>
 
-      <div className="glass-panel p-8 rounded-3xl border border-slate-800 space-y-8">
-        
-        {/* Job Role Selection */}
-        <div className="space-y-3">
-          <label className="text-sm font-bold text-white flex items-center space-x-2">
-            <Briefcase className="w-4 h-4 text-indigo-400" />
-            <span>Target Job Role</span>
-          </label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-            {roles.map((r) => (
+      <div className="animate-fade-up animate-delay-1" style={{
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderRadius: 18,
+        padding: '36px 32px',
+        display: 'flex', flexDirection: 'column', gap: 36,
+      }}>
+
+        {/* Role */}
+        <div>
+          <SectionLabel icon={Briefcase}>Target Role</SectionLabel>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 10 }}>
+            {roles.map(r => (
               <button
                 key={r}
-                type="button"
                 onClick={() => setRole(r)}
-                className={`p-3.5 rounded-xl border text-left text-sm font-semibold transition-all flex items-center justify-between ${
-                  role === r
-                    ? 'bg-indigo-600/20 border-indigo-500 text-indigo-200'
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
-                }`}
+                className="choice-btn"
+                style={role === r ? {
+                  background: 'var(--gold-dim)',
+                  borderColor: 'rgba(201,168,76,0.35)',
+                  color: 'var(--gold-light)',
+                } : {}}
               >
                 <span>{r}</span>
-                {role === r && <Check className="w-4 h-4 text-indigo-400" />}
+                {role === r && <Check size={13} color="var(--gold)" />}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Difficulty Level */}
-        <div className="space-y-3">
-          <label className="text-sm font-bold text-white flex items-center space-x-2">
-            <Sliders className="w-4 h-4 text-violet-400" />
-            <span>Difficulty Level</span>
-          </label>
-          <div className="grid grid-cols-3 gap-3">
-            {difficulties.map((d) => (
+        <div style={{ height: 1, background: 'var(--border)' }} />
+
+        {/* Difficulty */}
+        <div>
+          <SectionLabel icon={Sliders} color="var(--accent-blue)">Difficulty</SectionLabel>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12, lineHeight: 1.6 }}>
+            <strong style={{ color: 'var(--text-secondary)' }}>Beginner</strong> covers fundamentals. <strong style={{ color: 'var(--text-secondary)' }}>Intermediate</strong> adds real-world depth and trade-offs. <strong style={{ color: 'var(--text-secondary)' }}>Advanced</strong> includes system design, complexity analysis, and senior-level judgment calls.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+            {difficulties.map(d => (
               <button
-                key={d}
-                type="button"
-                onClick={() => setDifficulty(d)}
-                className={`p-3.5 rounded-xl border text-center text-sm font-semibold transition-all ${
-                  difficulty === d
-                    ? 'bg-violet-600/20 border-violet-500 text-violet-200'
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
-                }`}
+                key={d.id}
+                onClick={() => setDifficulty(d.id)}
+                className="choice-btn"
+                style={{
+                  flexDirection: 'column', alignItems: 'flex-start', gap: 3, padding: '14px 16px',
+                  ...(difficulty === d.id ? {
+                    background: 'rgba(74,143,212,0.1)',
+                    borderColor: 'rgba(74,143,212,0.3)',
+                    color: '#7ab8e8',
+                  } : {})
+                }}
               >
-                {d}
+                <span style={{ fontWeight: 600, fontSize: 13 }}>{d.id}</span>
+                <span style={{ fontSize: 11, opacity: 0.7, fontWeight: 400 }}>{d.desc}</span>
               </button>
             ))}
           </div>
         </div>
 
-        {/* Interview Type */}
-        <div className="space-y-3">
-          <label className="text-sm font-bold text-white flex items-center space-x-2">
-            <Sliders className="w-4 h-4 text-indigo-400" />
-            <span>Interview Type</span>
-          </label>
-          <div className="grid grid-cols-3 gap-3">
-            {types.map((t) => (
+        <div style={{ height: 1, background: 'var(--border)' }} />
+
+        {/* Type */}
+        <div>
+          <SectionLabel icon={Sliders} color="var(--accent-teal)">Interview Type</SectionLabel>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12, lineHeight: 1.6 }}>
+            <strong style={{ color: 'var(--text-secondary)' }}>Technical</strong> tests coding, systems, and domain knowledge. <strong style={{ color: 'var(--text-secondary)' }}>Behavioral</strong> focuses on past experiences and soft skills — STAR answers essential. <strong style={{ color: 'var(--text-secondary)' }}>Mixed</strong> mirrors real on-site rounds.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+            {types.map(t => (
               <button
-                key={t}
-                type="button"
-                onClick={() => setType(t)}
-                className={`p-3.5 rounded-xl border text-center text-sm font-semibold transition-all ${
-                  type === t
-                    ? 'bg-indigo-600/20 border-indigo-500 text-indigo-200'
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
-                }`}
+                key={t.id}
+                onClick={() => setType(t.id)}
+                className="choice-btn"
+                style={{
+                  flexDirection: 'column', alignItems: 'flex-start', gap: 3, padding: '14px 16px',
+                  ...(type === t.id ? {
+                    background: 'rgba(61,184,160,0.1)',
+                    borderColor: 'rgba(61,184,160,0.3)',
+                    color: '#6dd8c4',
+                  } : {})
+                }}
               >
-                {t}
+                <span style={{ fontWeight: 600, fontSize: 13 }}>{t.id}</span>
+                <span style={{ fontSize: 11, opacity: 0.7, fontWeight: 400 }}>{t.desc}</span>
               </button>
             ))}
           </div>
         </div>
 
-        {/* Number of Questions */}
-        <div className="space-y-3">
-          <label className="text-sm font-bold text-white flex items-center space-x-2">
-            <Hash className="w-4 h-4 text-emerald-400" />
-            <span>Number of Questions</span>
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            {counts.map((c) => (
+        <div style={{ height: 1, background: 'var(--border)' }} />
+
+        {/* Count */}
+        <div>
+          <SectionLabel icon={Hash} color="var(--gold)">Question Count</SectionLabel>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12, lineHeight: 1.6 }}>
+            <strong style={{ color: 'var(--text-secondary)' }}>5 questions</strong> (~20 min) is ideal for focused practice on a specific skill. <strong style={{ color: 'var(--text-secondary)' }}>10 questions</strong> simulates a full interview round and builds endurance.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, maxWidth: 380 }}>
+            {counts.map(c => (
               <button
                 key={c}
-                type="button"
                 onClick={() => setQuestionCount(c)}
-                className={`p-3.5 rounded-xl border text-center text-sm font-semibold transition-all ${
-                  questionCount === c
-                    ? 'bg-emerald-600/20 border-emerald-500 text-emerald-200'
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
-                }`}
+                className="choice-btn"
+                style={{
+                  justifyContent: 'center', padding: '16px',
+                  ...(questionCount === c ? {
+                    background: 'var(--gold-dim)',
+                    borderColor: 'rgba(201,168,76,0.35)',
+                    color: 'var(--gold-light)',
+                  } : {})
+                }}
               >
-                {c} Questions
+                <span className="font-display" style={{ fontSize: 22, fontWeight: 700, marginRight: 6 }}>{c}</span>
+                <span style={{ fontSize: 12, opacity: 0.7 }}>questions</span>
               </button>
             ))}
           </div>
         </div>
 
-        {/* Selected Config Summary */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 text-xs">
-          <div className="space-x-4">
-            <span className="text-slate-400">Role: <strong className="text-white">{role}</strong></span>
-            <span className="text-slate-400">Difficulty: <strong className="text-white">{difficulty}</strong></span>
-            <span className="text-slate-400">Type: <strong className="text-white">{type}</strong></span>
-            <span className="text-slate-400">Questions: <strong className="text-white">{questionCount}</strong></span>
+        {/* Summary & Launch */}
+        <div style={{
+          background: 'var(--surface-2)', border: '1px solid var(--border)',
+          borderRadius: 12, padding: '16px 20px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          flexWrap: 'wrap', gap: 12,
+        }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+            {[
+              { label: 'Role', value: role },
+              { label: 'Level', value: difficulty },
+              { label: 'Type', value: type },
+              { label: 'Questions', value: questionCount },
+            ].map(item => (
+              <div key={item.label}>
+                <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', fontFamily: 'DM Mono, monospace', marginBottom: 2 }}>{item.label}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{item.value}</div>
+              </div>
+            ))}
           </div>
-          <div className="text-emerald-400 flex items-center space-x-1 font-mono">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Saved in Frontend State</span>
+          <div style={{ fontSize: 11, color: 'var(--gold)', fontFamily: 'DM Mono, monospace', opacity: 0.7 }}>
+            Session Preview
           </div>
         </div>
 
-        {/* Launch Button */}
-        <button
-          onClick={handleStart}
-          className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-base rounded-xl shadow-xl shadow-indigo-600/30 flex items-center justify-center space-x-3 transition-all"
-        >
-          <Play className="w-5 h-5 fill-white" />
-          <span>Start Interview</span>
+        <button className="btn-gold" onClick={handleStart} style={{ width: '100%', justifyContent: 'center', padding: '15px', fontSize: 15 }}>
+          <Play size={15} fill="currentColor" />
+          Launch Interview Session
+          <ArrowRight size={15} />
         </button>
 
       </div>

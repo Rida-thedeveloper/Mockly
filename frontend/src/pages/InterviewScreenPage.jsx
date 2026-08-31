@@ -1,32 +1,52 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Volume2, Mic, Square, ArrowLeft, ArrowRight,
-  CheckCircle, AlertCircle, RefreshCw, Award,
+  CheckCircle, AlertCircle, Award,
   Activity, Clock, MessageSquare, Repeat2, Zap
 } from 'lucide-react';
 
-// ─── Speech Analysis Panel ────────────────────────────────────────────────────
+function MetricTile({ label, value, sub, color = 'var(--gold)' }) {
+  return (
+    <div className="metric-card" style={{ minWidth: 0 }}>
+      <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'DM Mono, monospace', marginBottom: 8 }}>{label}</div>
+      <div className="font-display" style={{ fontSize: 22, fontWeight: 700, color, marginBottom: 4 }}>{value}</div>
+      <div style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={sub}>{sub}</div>
+    </div>
+  );
+}
+
 function SpeechAnalysisPanel({ features, transcript, hesitation, feedback, isLoading, error }) {
   if (isLoading) {
     return (
-      <div className="mt-6 bg-slate-900/70 border border-slate-800 rounded-2xl p-6 space-y-3 animate-pulse">
-        <h3 className="text-sm font-bold text-indigo-400 uppercase tracking-widest mb-4">
-          Speech Analysis
-        </h3>
-        {[1, 2, 3].map(i => (
-          <div key={i} className="h-14 bg-slate-800/60 rounded-xl" />
-        ))}
+      <div style={{ marginTop: 24 }}>
+        <div style={{ height: 1, background: 'var(--border)', marginBottom: 24 }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+          <Activity size={14} color="var(--gold)" />
+          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'DM Mono, monospace' }}>
+            Analyzing Speech...
+          </span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+          {[1,2,3,4,5,6].map(i => (
+            <div key={i} className="metric-card" style={{ height: 78, background: 'var(--surface-3)', animation: 'pulse 1.5s ease-in-out infinite', animationDelay: `${i * 0.1}s` }} />
+          ))}
+        </div>
+        <style>{`@keyframes pulse { 0%,100%{opacity:0.5} 50%{opacity:1} }`}</style>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="mt-6 bg-red-950/40 border border-red-800/60 rounded-2xl p-4 flex items-start space-x-3">
-        <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+      <div style={{
+        marginTop: 20, background: 'rgba(212,106,106,0.08)',
+        border: '1px solid rgba(212,106,106,0.25)', borderRadius: 12, padding: 16,
+        display: 'flex', gap: 12,
+      }}>
+        <AlertCircle size={16} color="var(--accent-rose)" style={{ flexShrink: 0, marginTop: 1 }} />
         <div>
-          <p className="text-sm font-semibold text-red-300">Analysis Failed</p>
-          <p className="text-xs text-red-400/80 mt-1">{error}</p>
+          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent-rose)', margin: '0 0 4px' }}>Analysis Failed</p>
+          <p style={{ fontSize: 12, color: 'rgba(212,106,106,0.7)', margin: 0 }}>{error}</p>
         </div>
       </div>
     );
@@ -34,210 +54,132 @@ function SpeechAnalysisPanel({ features, transcript, hesitation, feedback, isLoa
 
   if (!features) return null;
 
-  const silencePct = features.silence_ratio != null
-    ? (features.silence_ratio * 100).toFixed(1) + '%'
-    : '—';
+  const silencePct = features.silence_ratio != null ? `${(features.silence_ratio * 100).toFixed(1)}%` : '—';
 
-  const stats = [
-    {
-      label: 'Speaking Rate',
-      value: features.wpm != null ? `${features.wpm} WPM` : '—',
-      icon: <Zap className="w-4 h-4 text-indigo-400" />,
-      sub: 'words per minute',
-      color: 'indigo',
-    },
-    {
-      label: 'Pause Count',
-      value: features.pause_count ?? '—',
-      icon: <Clock className="w-4 h-4 text-violet-400" />,
-      sub: 'detected pauses',
-      color: 'violet',
-    },
-    {
-      label: 'Average Pause',
-      value: features.average_pause != null ? `${features.average_pause} sec` : '—',
-      icon: <Activity className="w-4 h-4 text-cyan-400" />,
-      sub: 'per silent segment',
-      color: 'cyan',
-    },
-    {
-      label: 'Silence Ratio',
-      value: silencePct,
-      icon: <Activity className="w-4 h-4 text-amber-400" />,
-      sub: 'of total recording',
-      color: 'amber',
-    },
-    {
-      label: 'Filler Words',
-      value: features.filler_count ?? '—',
-      icon: <MessageSquare className="w-4 h-4 text-rose-400" />,
-      sub: features.fillers?.length ? features.fillers.join(', ') : 'none detected',
-      color: 'rose',
-    },
-    {
-      label: 'Repetitions',
-      value: features.repetition_count ?? '—',
-      icon: <Repeat2 className="w-4 h-4 text-orange-400" />,
-      sub: features.repeated_items?.length ? `"${features.repeated_items.join('", "')}"` : 'none detected',
-      color: 'orange',
-    },
+  const metrics = [
+    { label: 'Speaking Rate', value: features.wpm != null ? `${features.wpm}` : '—', sub: 'words / min', color: 'var(--gold)' },
+    { label: 'Pause Count', value: features.pause_count ?? '—', sub: 'detected pauses', color: '#7ab8e8' },
+    { label: 'Avg Pause', value: features.average_pause != null ? `${features.average_pause}s` : '—', sub: 'per silence', color: 'var(--accent-teal)' },
+    { label: 'Silence Ratio', value: silencePct, sub: 'of recording', color: '#e89050' },
+    { label: 'Filler Words', value: features.filler_count ?? '—', sub: features.fillers?.length ? features.fillers.join(', ') : 'none', color: 'var(--accent-rose)' },
+    { label: 'Repetitions', value: features.repetition_count ?? '—', sub: features.repeated_items?.length ? `"${features.repeated_items[0]}"…` : 'none', color: '#b07ae8' },
   ];
 
-  const colorMap = {
-    indigo: 'border-indigo-900/60 bg-indigo-950/30',
-    violet: 'border-violet-900/60 bg-violet-950/30',
-    cyan: 'border-cyan-900/60 bg-cyan-950/30',
-    amber: 'border-amber-900/60 bg-amber-950/30',
-    rose: 'border-rose-900/60 bg-rose-950/30',
-    orange: 'border-orange-900/60 bg-orange-950/30',
-  };
-
   return (
-    <div className="mt-6 bg-slate-900/70 border border-slate-800 rounded-2xl p-6 space-y-5">
-      {/* Section title */}
-      <div className="flex items-center space-x-2">
-        <Activity className="w-4 h-4 text-indigo-400" />
-        <h3 className="text-sm font-bold text-indigo-400 uppercase tracking-widest">
+    <div style={{ marginTop: 24 }}>
+      <div style={{ height: 1, background: 'var(--border)', marginBottom: 24 }} />
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+        <Activity size={14} color="var(--gold)" />
+        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'DM Mono, monospace' }}>
           Speech Analysis
-        </h3>
+        </span>
       </div>
 
-      {/* Stats grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {stats.map(({ label, value, icon, sub, color }) => (
-          <div
-            key={label}
-            className={`border ${colorMap[color]} rounded-xl p-3 space-y-1`}
-          >
-            <div className="flex items-center space-x-1.5 text-xs text-slate-400 font-semibold">
-              {icon}
-              <span>{label}</span>
-            </div>
-            <p className="text-xl font-extrabold text-white">{value}</p>
-            <p className="text-[10px] text-slate-500 leading-tight truncate" title={sub}>{sub}</p>
-          </div>
-        ))}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 24 }}>
+        {metrics.map(m => <MetricTile key={m.label} {...m} />)}
       </div>
 
-      {/* ML Hesitation Prediction */}
-      {hesitation && (
-        <div className="border-t border-slate-800/80 pt-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">
-              ML Hesitation Prediction
+      {/* ML Hesitation */}
+      {hesitation && !hesitation.error && (
+        <div style={{
+          background: 'var(--surface-2)', border: '1px solid var(--border)',
+          borderRadius: 12, padding: 18, marginBottom: 16,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'DM Mono, monospace' }}>
+              ML Hesitation Model
             </span>
-            <span className="text-[10px] text-slate-500 font-mono">
-              Model: {hesitation.model || 'hesitation_rf_v2.joblib'}
+            <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'DM Mono, monospace' }}>RF v2</span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Predicted Level:</span>
+            <span style={{
+              fontSize: 13, fontWeight: 700,
+              padding: '4px 12px', borderRadius: 6,
+              background: 'var(--gold-dim)', border: '1px solid rgba(201,168,76,0.2)',
+              color: 'var(--gold-light)',
+              fontFamily: 'DM Mono, monospace',
+            }}>
+              {hesitation.prediction || 'N/A'}
             </span>
           </div>
 
-          {hesitation.error ? (
-            <div className="bg-amber-950/30 border border-amber-800/50 rounded-xl p-3 text-xs text-amber-300">
-              {hesitation.error}
-            </div>
-          ) : (
-            <div className="bg-slate-950/60 border border-slate-800 p-4 rounded-xl space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-300">Predicted Communication Level:</span>
-                <span className="text-sm font-black text-white px-3 py-1 bg-indigo-950 border border-indigo-700/60 rounded-lg">
-                  {hesitation.prediction || 'N/A'}
-                </span>
-              </div>
-
-              {hesitation.probabilities && (
-                <div className="space-y-1.5 pt-1">
-                  <span className="text-[11px] font-medium text-slate-400 block">Model probabilities:</span>
-                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                    {['Low', 'Medium', 'High'].map(lbl => {
-                      const probVal = hesitation.probabilities[lbl];
-                      const probStr = probVal != null ? `${(probVal * 100).toFixed(0)}%` : '0%';
-                      return (
-                        <div key={lbl} className="bg-slate-900 border border-slate-800 rounded-lg p-2">
-                          <span className="text-slate-400 block text-[10px]">{lbl}</span>
-                          <span className="text-white font-bold">{probStr}</span>
-                        </div>
-                      );
-                    })}
+          {hesitation.probabilities && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 14 }}>
+              {['Low', 'Medium', 'High'].map(lbl => {
+                const v = hesitation.probabilities[lbl];
+                const pct = v != null ? `${(v * 100).toFixed(0)}%` : '0%';
+                return (
+                  <div key={lbl} style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 6, fontFamily: 'DM Mono, monospace', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{lbl}</div>
+                    <div className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>{pct}</div>
+                    <div style={{ height: 3, background: 'var(--surface-3)', borderRadius: 99, overflow: 'hidden', marginTop: 6 }}>
+                      <div style={{ height: '100%', width: pct, background: 'linear-gradient(90deg, var(--gold), var(--gold-light))', borderRadius: 99 }} />
+                    </div>
                   </div>
-                </div>
-              )}
-              <p className="text-[10px] text-slate-500 italic">
-                Model probabilities based on speech characteristics. Not a guaranteed diagnosis.
-              </p>
+                );
+              })}
             </div>
           )}
         </div>
       )}
 
-      {/* Personalized Feedback */}
-      <div className="border-t border-slate-800/80 pt-4 space-y-3">
-        <div className="flex items-center space-x-2">
-          <MessageSquare className="w-4 h-4 text-emerald-400" />
-          <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
-            Personalized Feedback
-          </span>
+      {/* Feedback */}
+      {feedback && feedback.summary && (
+        <div style={{
+          background: 'rgba(61,184,160,0.06)', border: '1px solid rgba(61,184,160,0.2)',
+          borderRadius: 12, padding: 18, marginBottom: 16,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <MessageSquare size={13} color="var(--accent-teal)" />
+            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent-teal)', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'DM Mono, monospace' }}>
+              Feedback
+            </span>
+          </div>
+          <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 12, lineHeight: 1.6 }}>{feedback.summary}</p>
+          {feedback.suggestions?.length > 0 && (
+            <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {feedback.suggestions.map((s, i) => (
+                <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                  <span style={{ color: 'var(--accent-teal)', fontWeight: 700, marginTop: 1, flexShrink: 0 }}>→</span>
+                  <span style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.55 }}>{s}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
-
-        {feedback && feedback.summary ? (
-          <div className="bg-slate-950/60 border border-slate-800 p-4 rounded-xl space-y-3">
-            <p className="text-sm font-semibold text-slate-200">
-              {feedback.summary}
-            </p>
-            {feedback.suggestions && feedback.suggestions.length > 0 && (
-              <div className="space-y-1.5 border-t border-slate-800/60 pt-2.5">
-                <span className="text-[11px] font-semibold text-slate-400 block">
-                  Suggestions for Improvement:
-                </span>
-                <ul className="space-y-1.5 text-xs text-slate-300">
-                  {feedback.suggestions.map((sug, idx) => (
-                    <li key={idx} className="flex items-start space-x-2">
-                      <span className="text-emerald-400 font-bold mt-0.5">•</span>
-                      <span className="leading-relaxed">{sug}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="bg-slate-950/40 border border-slate-800/60 p-3 rounded-xl text-xs text-slate-400 italic">
-            Personalized feedback is temporarily unavailable.
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Transcript */}
       {transcript && (
-        <div className="border-t border-slate-800/80 pt-4 space-y-2">
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+        <div style={{
+          background: 'var(--surface-2)', border: '1px solid var(--border)',
+          borderRadius: 12, padding: 16,
+        }}>
+          <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'DM Mono, monospace', marginBottom: 10 }}>
             Transcript
-          </span>
-          <div className="bg-slate-950/60 border border-slate-800 p-3 rounded-xl">
-            <p className="text-slate-200 text-sm leading-relaxed italic">
-              "{transcript}"
-            </p>
           </div>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontStyle: 'italic', lineHeight: 1.65, margin: 0 }}>
+            "{transcript}"
+          </p>
         </div>
       )}
     </div>
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function InterviewScreenPage({
-  setCurrentPage,
-  interviewSetup,
-  recordedAnswers,
-  setRecordedAnswers,
-  setSelectedAnswerIdx,
-  selectedAnswerIdx,
+  setCurrentPage, interviewSetup, recordedAnswers, setRecordedAnswers,
+  setSelectedAnswerIdx, selectedAnswerIdx,
 }) {
   const defaultQuestions = [
     "What is inheritance in object-oriented programming?",
     "What is the difference between stack and queue?",
     "What is normalization in databases?",
     "What is an API?",
-    "Explain the difference between authentication and authorization."
+    "Explain the difference between authentication and authorization.",
   ];
 
   const questions = defaultQuestions.slice(0, interviewSetup?.questionCount || 5);
@@ -247,105 +189,63 @@ export default function InterviewScreenPage({
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // MediaRecorder refs & state
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerIntervalRef = useRef(null);
-
-  // Get existing answer for current question
-  const currentAnswer = recordedAnswers[currentIdx];
-
-  // Speech synthesis for 🔊 Play Question
-  const handlePlayQuestion = () => {
-    if (!('speechSynthesis' in window)) {
-      alert("Browser speech synthesis not supported.");
-      return;
-    }
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(questions[currentIdx]);
-    utterance.rate = 0.95;
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-    window.speechSynthesis.speak(utterance);
-  };
-
   const spokenIdxRef = useRef(-1);
 
-  // Auto-speak question on transition, guarded by ref for StrictMode/HMR
+  const currentAnswer = recordedAnswers[currentIdx];
+
+  const handlePlayQuestion = () => {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(questions[currentIdx]);
+    u.rate = 0.95;
+    u.onstart = () => setIsSpeaking(true);
+    u.onend = () => setIsSpeaking(false);
+    u.onerror = () => setIsSpeaking(false);
+    window.speechSynthesis.speak(u);
+  };
+
   useEffect(() => {
     if (spokenIdxRef.current !== currentIdx) {
       spokenIdxRef.current = currentIdx;
-
-      // Only speak if this question is not yet answered/transcribed
-      const hasAnswer = recordedAnswers[currentIdx]?.transcript != null;
-
-      if (!hasAnswer) {
-        // Delay slightly to ensure smooth render before speech starts
-        const tid = setTimeout(() => {
-          handlePlayQuestion();
-        }, 500);
-
-        return () => {
-          clearTimeout(tid);
-          // Reset ref if unmounted before completion, allowing StrictMode to remount properly
-          if (spokenIdxRef.current === currentIdx) {
-            spokenIdxRef.current = -1;
-          }
-        };
+      if (!recordedAnswers[currentIdx]?.transcript) {
+        const tid = setTimeout(handlePlayQuestion, 500);
+        return () => { clearTimeout(tid); if (spokenIdxRef.current === currentIdx) spokenIdxRef.current = -1; };
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIdx]);
 
-  // Start MediaRecorder audio capture
   const startRecording = async () => {
     setErrorMsg('');
     audioChunksRef.current = [];
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data && event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-
-      mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        const audioUrl = URL.createObjectURL(audioBlob);
-        const recordedDuration = timer;
-
+      const mr = new MediaRecorder(stream);
+      mediaRecorderRef.current = mr;
+      mr.ondataavailable = (e) => { if (e.data?.size > 0) audioChunksRef.current.push(e.data); };
+      mr.onstop = () => {
+        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         setRecordedAnswers(prev => ({
           ...prev,
           [currentIdx]: {
-            blob: audioBlob,
-            url: audioUrl,
-            duration: recordedDuration,
+            blob, url: URL.createObjectURL(blob), duration: timer,
             timestamp: new Date().toLocaleTimeString(),
-            isAnalyzing: false,
-            analyzeError: null,
-            transcript: null,
-            features: null,
+            isAnalyzing: false, analyzeError: null, transcript: null, features: null,
           }
         }));
-        stream.getTracks().forEach(track => track.stop());
+        stream.getTracks().forEach(t => t.stop());
       };
-
-      mediaRecorder.start();
+      mr.start();
       setIsRecording(true);
       setTimer(0);
       timerIntervalRef.current = setInterval(() => setTimer(t => t + 1), 1000);
-
     } catch (err) {
-      console.error("Microphone access error:", err);
-      setErrorMsg("Microphone permission denied or device not found. Please allow microphone access.");
+      setErrorMsg("Microphone permission denied or device not found.");
     }
   };
 
-  // Stop MediaRecorder capture
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
@@ -354,325 +254,310 @@ export default function InterviewScreenPage({
     }
   };
 
-  // Reset on question change
-  useEffect(() => {
-    if (isRecording) stopRecording();
-    setTimer(0);
-    setErrorMsg('');
-  }, [currentIdx]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-        mediaRecorderRef.current.stop();
-      }
-    };
+  useEffect(() => { if (isRecording) stopRecording(); setTimer(0); setErrorMsg(''); }, [currentIdx]);
+  useEffect(() => () => {
+    clearInterval(timerIntervalRef.current);
+    if (mediaRecorderRef.current?.state !== 'inactive') mediaRecorderRef.current?.stop();
   }, []);
 
-  const formatTimer = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
+  const fmt = (s) => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
 
-  const handleNext = () => { if (currentIdx < questions.length - 1) setCurrentIdx(currentIdx + 1); };
-  const handlePrev = () => { if (currentIdx > 0) setCurrentIdx(currentIdx - 1); };
-
-  // Submit: call /api/analyze and store transcript + features
   const handleSubmitAnswer = async () => {
-    if (!currentAnswer || !currentAnswer.blob || currentAnswer.isAnalyzing) return;
-
-    // Set loading state
-    setRecordedAnswers(prev => ({
-      ...prev,
-      [currentIdx]: { ...prev[currentIdx], isAnalyzing: true, analyzeError: null }
-    }));
-
+    if (!currentAnswer?.blob || currentAnswer.isAnalyzing) return;
+    setRecordedAnswers(prev => ({ ...prev, [currentIdx]: { ...prev[currentIdx], isAnalyzing: true, analyzeError: null } }));
     try {
-      const formData = new FormData();
-      formData.append('audio', currentAnswer.blob, 'recording.webm');
-      formData.append('question', questions[currentIdx]);
-
-      const response = await fetch('http://127.0.0.1:8000/api/analyze', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errBody = await response.json().catch(() => ({}));
-        throw new Error(errBody.detail || `Server error ${response.status}`);
-      }
-
-      const data = await response.json();
+      const fd = new FormData();
+      fd.append('audio', currentAnswer.blob, 'recording.webm');
+      fd.append('question', questions[currentIdx]);
+      const res = await fetch('http://127.0.0.1:8000/api/analyze', { method: 'POST', body: fd });
+      if (!res.ok) { const e = await res.json().catch(()=>{}); throw new Error(e?.detail || `Error ${res.status}`); }
+      const data = await res.json();
       if (!data.success) throw new Error(data.error || 'Analysis failed');
-
       setRecordedAnswers(prev => ({
         ...prev,
-        [currentIdx]: {
-          ...prev[currentIdx],
-          transcript: data.transcript,
-          features: data.features,
-          hesitation: data.hesitation,
-          feedback: data.feedback,
-          relevance: data.relevance,
-          isAnalyzing: false,
-          analyzeError: null,
-        }
+        [currentIdx]: { ...prev[currentIdx], transcript: data.transcript, features: data.features, hesitation: data.hesitation, feedback: data.feedback, relevance: data.relevance, isAnalyzing: false, analyzeError: null }
       }));
-
     } catch (err) {
-      console.error("Analysis error:", err);
       setRecordedAnswers(prev => ({
         ...prev,
-        [currentIdx]: {
-          ...prev[currentIdx],
-          isAnalyzing: false,
-          analyzeError: err.message || "Could not reach the backend. Make sure it is running at http://127.0.0.1:8000",
-        }
+        [currentIdx]: { ...prev[currentIdx], isAnalyzing: false, analyzeError: err.message || "Could not reach backend at http://127.0.0.1:8000" }
       }));
     }
   };
 
   const hasResult = currentAnswer?.transcript != null || currentAnswer?.features != null;
+  const progress = ((currentIdx + 1) / questions.length) * 100;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 flex flex-col lg:flex-row gap-8">
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px', display: 'flex', gap: 24, flexWrap: 'wrap' }}>
 
-      {/* Left Column: Interview Flow */}
-      <div className="flex-1 space-y-8">
+      {/* ── Left Column ─────────────────────────────────────────── */}
+      <div style={{ flex: '1 1 480px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-        {/* Top Session Progress Bar */}
-        <div className="glass-panel p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <span className="text-xl font-bold text-white">Mockly</span>
-            <span className="text-xs text-slate-500 font-mono">|</span>
-            <span className="text-xs font-semibold text-indigo-400 bg-indigo-950/80 px-2.5 py-1 rounded-md border border-indigo-800">
-              {interviewSetup?.role || 'Software Engineer'}
+        {/* Progress bar */}
+        <div className="card" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+            <span className="font-display" style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+              {interviewSetup?.role || 'Interview'}
             </span>
+            <span className="tag-surface" style={{ whiteSpace: 'nowrap' }}>{interviewSetup?.difficulty}</span>
           </div>
-          <div className="flex items-center space-x-2">
-            <span className="text-xs text-slate-400 font-semibold">
-              Question {currentIdx + 1} of {questions.length}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+            <span style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'DM Mono, monospace', whiteSpace: 'nowrap' }}>
+              {currentIdx + 1} / {questions.length}
             </span>
-            <div className="w-24 bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800">
-              <div
-                className="bg-indigo-500 h-full transition-all duration-300"
-                style={{ width: `${((currentIdx + 1) / questions.length) * 100}%` }}
-              />
+            <div className="progress-bar-track" style={{ width: 80 }}>
+              <div className="progress-bar-fill" style={{ width: `${progress}%` }} />
             </div>
           </div>
         </div>
 
-        {/* Main Question Card */}
-        <div className="glass-panel p-8 rounded-3xl border border-slate-800 space-y-6">
+        {/* Question card */}
+        <div className="card" style={{ padding: '32px 28px' }}>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider">
-                Technical Question {currentIdx + 1}
-              </span>
-              <button
-                onClick={handlePlayQuestion}
-                className={`flex items-center space-x-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${isSpeaking
-                  ? 'bg-violet-600 text-white animate-pulse'
-                  : 'bg-slate-900 hover:bg-slate-800 text-indigo-300 border border-slate-700'
-                  }`}
-              >
-                <Volume2 className="w-4 h-4 text-indigo-400" />
-                <span>{isSpeaking ? 'Playing Audio...' : '🔊 Play Question'}</span>
-              </button>
-            </div>
-
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white leading-snug">
-              "{questions[currentIdx]}"
-            </h2>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+            <div className="tag-gold">Question {currentIdx + 1}</div>
+            <button
+              onClick={handlePlayQuestion}
+              className="btn-surface"
+              style={{ padding: '7px 14px', fontSize: 12 }}
+            >
+              <Volume2 size={13} color={isSpeaking ? 'var(--gold)' : undefined} />
+              {isSpeaking ? 'Playing…' : 'Play Aloud'}
+            </button>
           </div>
 
-          {/* Microphone Recording Section */}
-          <div className="border-t border-slate-800/80 pt-6 space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-300">Your Answer</h3>
-              {currentAnswer && (
-                <span className="text-xs text-emerald-400 flex items-center space-x-1 font-mono">
-                  <CheckCircle className="w-3.5 h-3.5" />
-                  <span>Audio Captured ({currentAnswer.duration}s)</span>
-                </span>
-              )}
-            </div>
+          <h2 className="font-display" style={{
+            fontSize: 'clamp(20px, 3vw, 26px)', fontWeight: 700,
+            color: 'var(--text-primary)', lineHeight: 1.35,
+            marginBottom: 28,
+            borderLeft: '3px solid var(--gold)',
+            paddingLeft: 18,
+            marginLeft: -18 + 28,
+          }}>
+            "{questions[currentIdx]}"
+          </h2>
 
-            {errorMsg && (
-              <div className="bg-red-950/60 border border-red-800 p-3 rounded-xl flex items-center space-x-2 text-xs text-red-300">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{errorMsg}</span>
-              </div>
+          {/* Recording zone */}
+          <div style={{ height: 1, background: 'var(--border)', marginBottom: 24 }} />
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>Your Response</span>
+            {currentAnswer && !isRecording && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--accent-teal)', fontFamily: 'DM Mono, monospace' }}>
+                <CheckCircle size={11} /> {currentAnswer.duration}s captured
+              </span>
             )}
+          </div>
 
-            {/* Recording Status & Main Mic Button */}
-            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-8 text-center space-y-6">
-              {isRecording ? (
-                <div className="space-y-4">
-                  <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-red-950/80 border border-red-800 text-red-400 font-mono text-sm font-bold animate-pulse">
-                    <span>🔴 Recording...</span>
-                    <span>{formatTimer(timer)}</span>
-                  </div>
-                  <div className="flex justify-center">
-                    <button
-                      onClick={stopRecording}
-                      className="w-20 h-20 rounded-full bg-red-600 hover:bg-red-500 text-white flex items-center justify-center shadow-xl shadow-red-600/30 transition-transform active:scale-95"
-                    >
-                      <Square className="w-8 h-8 fill-white" />
-                    </button>
-                  </div>
-                  <p className="text-xs text-slate-400">Click to stop recording when finished speaking</p>
+          {errorMsg && (
+            <div style={{
+              background: 'rgba(212,106,106,0.08)', border: '1px solid rgba(212,106,106,0.25)',
+              borderRadius: 10, padding: '10px 14px',
+              display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16,
+            }}>
+              <AlertCircle size={14} color="var(--accent-rose)" />
+              <span style={{ fontSize: 12, color: 'var(--accent-rose)' }}>{errorMsg}</span>
+            </div>
+          )}
+
+          {/* Mic area */}
+          <div style={{
+            background: 'var(--surface-2)', border: '1px solid var(--border)',
+            borderRadius: 14, padding: '36px 24px',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
+          }}>
+            {isRecording ? (
+              <>
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '6px 16px', borderRadius: 999,
+                  background: 'rgba(212,106,106,0.12)', border: '1px solid rgba(212,106,106,0.3)',
+                  fontSize: 12, color: 'var(--accent-rose)', fontFamily: 'DM Mono, monospace', fontWeight: 600,
+                }}>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--accent-rose)', animation: 'pulse-dot 1s ease-in-out infinite', display: 'inline-block' }} />
+                  REC  {fmt(timer)}
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="flex justify-center">
-                    <button
-                      onClick={startRecording}
-                      className="w-20 h-20 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center shadow-xl shadow-indigo-600/30 transition-transform active:scale-95 hover:scale-105"
-                    >
-                      <Mic className="w-8 h-8" />
-                    </button>
-                  </div>
-                  <p className="text-sm font-bold text-white">🎤 Start Recording</p>
-                  <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                    Click the microphone to record your verbal response using MediaRecorder API.
+                <button
+                  onClick={stopRecording}
+                  className="mic-recording-pulse"
+                  style={{
+                    width: 72, height: 72, borderRadius: '50%',
+                    background: 'var(--accent-rose)',
+                    border: 'none', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'white',
+                  }}
+                >
+                  <Square size={24} fill="white" />
+                </button>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Click to stop recording</p>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={startRecording}
+                  className="mic-pulse"
+                  style={{
+                    width: 72, height: 72, borderRadius: '50%',
+                    background: 'linear-gradient(135deg, rgba(201,168,76,0.2), rgba(201,168,76,0.08))',
+                    border: '1px solid rgba(201,168,76,0.3)',
+                    cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'var(--gold)',
+                    transition: 'transform 0.15s ease',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.06)'}
+                  onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                >
+                  <Mic size={26} />
+                </button>
+                <div style={{ textAlign: 'center' }}>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>
+                    {currentAnswer ? 'Re-record Response' : 'Record Response'}
+                  </p>
+                  <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
+                    Click the microphone to begin
                   </p>
                 </div>
-              )}
-
-              {/* Recorded Audio Preview Player */}
-              {currentAnswer && !isRecording && (
-                <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3 max-w-md mx-auto text-left">
-                  <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span>Recorded Audio Preview</span>
-                    <span className="font-mono text-indigo-400">{currentAnswer.timestamp}</span>
-                  </div>
-                  <audio controls src={currentAnswer.url} className="w-full h-10 accent-indigo-500 rounded-lg" />
-                </div>
-              )}
-            </div>
-
-            {/* Speech Analysis Panel (shown after submit) */}
-            {currentAnswer && !isRecording && (
-              <SpeechAnalysisPanel
-                features={currentAnswer.features}
-                transcript={currentAnswer.transcript}
-                hesitation={currentAnswer.hesitation}
-                feedback={currentAnswer.feedback}
-                isLoading={currentAnswer.isAnalyzing}
-                error={currentAnswer.analyzeError}
-              />
+              </>
             )}
 
-            {/* Submit Button */}
-            {currentAnswer && !isRecording && !hasResult && !currentAnswer.isAnalyzing && (
-              <div className="flex justify-end pt-2">
+            {currentAnswer && !isRecording && (
+              <div style={{
+                width: '100%', maxWidth: 400,
+                background: 'var(--surface)', border: '1px solid var(--border)',
+                borderRadius: 10, padding: '12px 14px',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Audio Preview</span>
+                  <span style={{ fontSize: 10, color: 'var(--gold)', fontFamily: 'DM Mono, monospace' }}>{currentAnswer.timestamp}</span>
+                </div>
+                <audio controls src={currentAnswer.url} style={{ width: '100%', height: 36 }} />
+              </div>
+            )}
+          </div>
+
+          {/* Analysis panel */}
+          {currentAnswer && !isRecording && (
+            <SpeechAnalysisPanel
+              features={currentAnswer.features}
+              transcript={currentAnswer.transcript}
+              hesitation={currentAnswer.hesitation}
+              feedback={currentAnswer.feedback}
+              isLoading={currentAnswer.isAnalyzing}
+              error={currentAnswer.analyzeError}
+            />
+          )}
+
+          {/* Action buttons */}
+          {currentAnswer && !isRecording && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
+              {!hasResult && !currentAnswer.isAnalyzing && (
                 <button
                   onClick={handleSubmitAnswer}
-                  className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-emerald-600/20 flex items-center space-x-2 transition-colors"
+                  className="btn-gold"
+                  style={{ padding: '10px 22px', fontSize: 13 }}
                 >
-                  <Award className="w-4 h-4" />
-                  <span>Submit Answer</span>
+                  <Award size={14} />
+                  Analyze Answer
                 </button>
-              </div>
-            )}
-
-            {/* View Feedback (after result arrives) */}
-            {hasResult && !currentAnswer.isAnalyzing && (
-              <div className="flex justify-end pt-2">
+              )}
+              {hasResult && !currentAnswer.isAnalyzing && (
                 <button
-                  onClick={() => {
-                    setSelectedAnswerIdx(currentIdx);
-                    setCurrentPage('feedback');
-                  }}
-                  className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-indigo-600/20 flex items-center space-x-2 transition-colors"
+                  onClick={() => { setSelectedAnswerIdx(currentIdx); setCurrentPage('feedback'); }}
+                  className="btn-ghost"
+                  style={{ padding: '10px 22px', fontSize: 13, color: 'var(--text-primary)' }}
                 >
-                  <Award className="w-4 h-4" />
-                  <span>View Question Feedback</span>
+                  <Award size={14} />
+                  Full Feedback
                 </button>
-              </div>
-            )}
-
-          </div>
-        </div>
-
-        {/* Footer Nav Controls */}
-        <div className="flex items-center justify-between pt-2">
-          <button
-            onClick={handlePrev}
-            disabled={currentIdx === 0}
-            className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl text-sm font-semibold border transition-colors ${currentIdx === 0
-              ? 'opacity-40 cursor-not-allowed text-slate-500 border-slate-800'
-              : 'bg-slate-900 hover:bg-slate-800 text-slate-200 border-slate-700'
-              }`}
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Previous Question</span>
-          </button>
-
-          <span className="text-xs font-mono text-slate-400">
-            Question {currentIdx + 1} / {questions.length}
-          </span>
-
-          {currentIdx < questions.length - 1 ? (
-            <button
-              onClick={handleNext}
-              className="flex items-center space-x-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20 transition-colors"
-            >
-              <span>Next Question</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          ) : (
-            <button
-              onClick={() => setCurrentPage('report')}
-              className="flex items-center space-x-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-600/20 transition-colors"
-            >
-              <span>Finish Interview & Report</span>
-              <Award className="w-4 h-4" />
-            </button>
+              )}
+            </div>
           )}
         </div>
 
+        {/* Navigation */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <button
+            onClick={() => setCurrentIdx(i => Math.max(0, i - 1))}
+            disabled={currentIdx === 0}
+            className="btn-surface"
+            style={{ opacity: currentIdx === 0 ? 0.35 : 1 }}
+          >
+            <ArrowLeft size={14} /> Previous
+          </button>
+
+          <span style={{ fontSize: 11, fontFamily: 'DM Mono, monospace', color: 'var(--text-muted)' }}>
+            {currentIdx + 1} of {questions.length}
+          </span>
+
+          {currentIdx < questions.length - 1 ? (
+            <button onClick={() => setCurrentIdx(i => i + 1)} className="btn-surface">
+              Next <ArrowRight size={14} />
+            </button>
+          ) : (
+            <button onClick={() => setCurrentPage('report')} className="btn-gold" style={{ padding: '10px 20px', fontSize: 13 }}>
+              Finish & View Report <Award size={14} />
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Right Column: Conversation History Panel */}
-      <div className="w-full lg:w-1/3 glass-panel p-6 rounded-3xl border border-slate-800 flex flex-col lg:h-[calc(100vh-10rem)]">
-        <h3 className="text-xl font-bold text-white mb-6 flex items-center space-x-2 shrink-0">
-          <MessageSquare className="w-5 h-5 text-indigo-400" />
-          <span>Conversation History</span>
-        </h3>
+      {/* ── Right Column: History ─────────────────────────────────── */}
+      <div style={{
+        width: 280, flexShrink: 0,
+        background: 'var(--surface)', border: '1px solid var(--border)',
+        borderRadius: 16, padding: '24px 20px',
+        maxHeight: 'calc(100vh - 100px)', position: 'sticky', top: 88,
+        overflowY: 'auto', display: 'flex', flexDirection: 'column',
+        alignSelf: 'flex-start',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
+          <MessageSquare size={14} color="var(--gold)" />
+          <span className="font-display" style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)' }}>
+            Session Log
+          </span>
+        </div>
 
-        <div className="flex-1 overflow-y-auto space-y-8 pr-2 pb-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {questions.slice(0, currentIdx + 1).map((q, idx) => {
-            const historyAnswer = recordedAnswers[idx];
+            const a = recordedAnswers[idx];
+            const isActive = idx === currentIdx;
             return (
-              <div key={idx} className="space-y-4">
-                {/* Question */}
-                <div className="space-y-2">
-                  <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center space-x-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
-                    <span>Question {idx + 1}</span>
+              <div
+                key={idx}
+                style={{ cursor: 'pointer' }}
+                onClick={() => setCurrentIdx(idx)}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <div style={{
+                    width: 22, height: 22, borderRadius: 6, flexShrink: 0,
+                    background: isActive ? 'var(--gold-dim)' : 'var(--surface-3)',
+                    border: `1px solid ${isActive ? 'rgba(201,168,76,0.3)' : 'var(--border)'}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 9, fontWeight: 700, color: isActive ? 'var(--gold)' : 'var(--text-muted)',
+                    fontFamily: 'DM Mono, monospace',
+                  }}>
+                    {idx + 1}
                   </div>
-                  <div className="text-sm font-medium text-slate-200 leading-relaxed pl-3 border-l text-left border-indigo-500/30">
-                    "{q}"
-                  </div>
+                  <span style={{ fontSize: 10, color: isActive ? 'var(--gold)' : 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', fontFamily: 'DM Mono, monospace', fontWeight: 600 }}>
+                    Q{idx + 1}
+                  </span>
+                  {a?.transcript && (
+                    <CheckCircle size={10} color="var(--accent-teal)" style={{ marginLeft: 'auto' }} />
+                  )}
                 </div>
-
-                {/* Answer Transcript */}
-                {historyAnswer?.transcript && (
-                  <div className="space-y-2 pt-1">
-                    <div className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center space-x-1.5">
-                      <Mic className="w-3 h-3" />
-                      <span>Answer Transcript</span>
-                    </div>
-                    <div className="text-sm text-slate-300 italic leading-relaxed pl-3 border-l-2 text-left border-emerald-500/40">
-                      "{historyAnswer.transcript}"
-                    </div>
-                  </div>
+                <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 6px', paddingLeft: 30 }}>
+                  {q.length > 80 ? q.slice(0, 80) + '…' : q}
+                </p>
+                {a?.transcript && (
+                  <p style={{ fontSize: 11, color: 'var(--text-muted)', fontStyle: 'italic', margin: 0, paddingLeft: 30, lineHeight: 1.4 }}>
+                    "{a.transcript.slice(0, 80)}{a.transcript.length > 80 ? '…' : ''}"
+                  </p>
+                )}
+                {idx < currentIdx && (
+                  <div style={{ height: 1, background: 'var(--border)', margin: '16px 0 0' }} />
                 )}
               </div>
             );
@@ -680,6 +565,12 @@ export default function InterviewScreenPage({
         </div>
       </div>
 
+      <style>{`
+        @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.3} }
+        @media (max-width: 900px) {
+          .sticky-sidebar { position: static !important; max-height: none !important; width: 100% !important; }
+        }
+      `}</style>
     </div>
   );
 }
