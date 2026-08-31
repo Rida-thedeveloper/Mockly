@@ -79,6 +79,25 @@ export default function Navbar({ currentPage, setCurrentPage, user }) {
           {/* Right Actions */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <button
+              onClick={() => setCurrentPage('login')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '7px 14px', borderRadius: 8,
+                background: 'transparent',
+                border: '1px solid var(--border)',
+                color: 'var(--text-secondary)',
+                fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                transition: 'all 0.15s',
+                fontFamily: "'DM Sans', sans-serif",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.4)'; e.currentTarget.style.color = 'var(--gold)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+            >
+              <LogIn size={13} />
+              Sign In
+            </button>
+
+            <button
               onClick={() => setCurrentPage('setup')}
               className="btn-gold"
               style={{ padding: '8px 18px', fontSize: 13, borderRadius: 8 }}
