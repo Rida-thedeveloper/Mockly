@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env
+
+# Sensitive / local config
+.env.local
+
+# Test / scratch files
+test_analyze.py
+test_whisper.py
+test_semantic_scores.py
+
+# Dataset / training artefacts (keep models/ but ignore raw training data)
+dataset/

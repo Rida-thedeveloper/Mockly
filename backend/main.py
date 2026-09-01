@@ -4,6 +4,14 @@ from pydantic import BaseModel
 import os
 import tempfile
 import logging
+from contextlib import asynccontextmanager
+
+# Load .env in local dev (no-op if file absent or python-dotenv not installed)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 from services.speech_to_text import transcribe_audio_file
 from services.audio_features import extract_audio_features
@@ -15,16 +23,40 @@ from ml.semantic_relevance import calculate_relevance
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Pre-warm heavy ML models at server startup to avoid cold-start lag."""
+    logger.info("[startup] Pre-warming Whisper model...")
+    try:
+        from services.speech_to_text import load_whisper_model
+        load_whisper_model()
+        logger.info("[startup] Whisper model ready.")
+    except Exception as e:
+        logger.warning(f"[startup] Whisper pre-warm skipped: {e}")
+
+    logger.info("[startup] Sentence-transformer already loaded at import.")
+    logger.info("[startup] Startup complete.")
+    yield
+    logger.info("[shutdown] Server shutting down.")
+
 app = FastAPI(
     title="Mockly API",
     description="Backend API for Mockly AI Interview Platform",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan,
 )
 
-# Configure CORS so React frontend can communicate with FastAPI
+# Configure CORS
+# In production set ALLOWED_ORIGINS env variable to your Vercel frontend URL.
+# Example: ALLOWED_ORIGINS=https://mockly.vercel.app,https://mockly-git-main-xxx.vercel.app
+# Multiple origins are comma-separated. Falls back to wildcard for local dev.
+_raw_origins = os.getenv("ALLOWED_ORIGINS", "")
+ALLOWED_ORIGINS = [o.strip() for o in _raw_origins.split(",") if o.strip()] or ["*"]
+logger.info(f"CORS allowed origins: {ALLOWED_ORIGINS}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins for local development
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
