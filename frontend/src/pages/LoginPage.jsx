@@ -369,25 +369,15 @@ export default function LoginPage({ setCurrentPage, setUser, onAuth }) {
                   <FieldBox label="Email" type="email" value={siEmail} onChange={setSiEmail} />
                   <FieldBox label="Password" type="password" value={siPassword} onChange={setSiPassword} />
 
-                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  {/* forgot password */}
+                  {/* <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                     <button type="button" style={{
                       background: 'none', border: 'none', cursor: 'pointer',
                       fontSize: 13, color: 'var(--gold)', fontFamily: 'inherit', padding: 0,
                     }}>
                       Forgot password?
                     </button>
-                  </div>
-
-                  {/* Demo notice */}
-                  <div style={{
-                    borderRadius: 10, padding: '10px 14px',
-                    background: 'var(--gold-dim)', border: '1px solid rgba(201,168,76,0.2)',
-                    fontSize: 12, color: 'var(--gold)', fontFamily: "'DM Sans', sans-serif",
-                    display: 'flex', gap: 8, alignItems: 'center',
-                  }}>
-                    <span>✦</span>
-                    <span>Demo mode — clicking Sign In opens your Dashboard.</span>
-                  </div>
+                  </div> */}
 
                   {authError && <div style={{ padding: '10px 14px', background: 'rgba(212,106,106,0.1)', border: '1px solid rgba(212,106,106,0.3)', borderRadius: 10, color: 'var(--accent-rose)', fontSize: 13, marginBottom: 4 }}>{authError}</div>}
                   <button
