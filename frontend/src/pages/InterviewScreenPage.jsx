@@ -705,13 +705,18 @@ export default function InterviewScreenPage({
   };
 
   useEffect(() => {
+    let tid;
     if (spokenIdxRef.current !== currentIdx) {
-      spokenIdxRef.current = currentIdx;
       if (!recordedAnswers[currentIdx]?.transcript) {
-        const tid = setTimeout(handlePlayQuestion, 500);
-        return () => { clearTimeout(tid); };
+        tid = setTimeout(() => {
+          handlePlayQuestion();
+          spokenIdxRef.current = currentIdx;
+        }, 500);
+      } else {
+        spokenIdxRef.current = currentIdx;
       }
     }
+    return () => { if (tid) clearTimeout(tid); };
   }, [currentIdx]);
 
   const startRecording = async () => {
@@ -764,8 +769,9 @@ export default function InterviewScreenPage({
       const fd = new FormData();
       fd.append('audio', currentAnswer.blob, 'recording.webm');
       fd.append('question', questions[currentIdx]);
-      const res = await fetch('http://127.0.0.1:8000/api/analyze', { method: 'POST', body: fd });
-      if (!res.ok) { const e = await res.json().catch(() => {}); throw new Error(e?.detail || `Error ${res.status}`); }
+      const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+      const res = await fetch(`${API_BASE}/api/analyze`, { method: 'POST', body: fd });
+      if (!res.ok) { const e = await res.json().catch(() => { }); throw new Error(e?.detail || `Error ${res.status}`); }
       const data = await res.json();
       if (!data.success) throw new Error(data.error || 'Analysis failed');
       setRecordedAnswers(prev => ({
@@ -775,7 +781,7 @@ export default function InterviewScreenPage({
     } catch (err) {
       setRecordedAnswers(prev => ({
         ...prev,
-        [currentIdx]: { ...prev[currentIdx], isAnalyzing: false, analyzeError: err.message || 'Could not reach backend at http://127.0.0.1:8000' },
+        [currentIdx]: { ...prev[currentIdx], isAnalyzing: false, analyzeError: err.message || `Could not reach backend at ${import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'}` },
       }));
     }
   };

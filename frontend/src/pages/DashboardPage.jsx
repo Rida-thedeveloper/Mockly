@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   PlusCircle, Award, CheckCircle2, TrendingUp, AlertTriangle, ArrowRight,
   Calendar, Code, Database, Cpu, Mic, X, Lightbulb, Flame, Target, Gauge,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ScrollStroke from '../components/ScrollStroke';
+import { supabase } from '../supabaseClient';
 
 const MONO = "'DM Mono', monospace";
 const SANS = "'DM Sans', sans-serif";
@@ -38,27 +39,66 @@ const section = (i) => ({
 
 export default function DashboardPage({ setCurrentPage, user }) {
   const [tipDismissed, setTipDismissed] = useState(false);
+  const [historyData, setHistoryData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      const { data, error } = await supabase
+        .from('interviews')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (!error && data) {
+        setHistoryData(data);
+      }
+      setLoading(false);
+    }
+    fetchData();
+  }, []);
+
+  const totalInterviews = historyData.length;
+  const avgScore = totalInterviews > 0 ? Math.round(historyData.reduce((acc, curr) => acc + (curr.overall_score || 0), 0) / totalInterviews) : 0;
+
+  let topSkill = "Clarity";
+  let focusArea = "Pacing";
+  if (totalInterviews > 0) {
+    const avgRel = historyData.reduce((acc, curr) => acc + (curr.avg_relevance || 0), 0) / totalInterviews;
+    if (avgRel > 75) topSkill = "Relevance";
+    else topSkill = "Fluency";
+  }
 
   const stats = [
-    { label: "Interviews Completed", value: "14", icon: CheckCircle2, color: 'var(--gold)', foot: 'All time' },
-    { label: "Average Score", value: "78", sub: "/ 100", icon: Award, color: '#7ab8e8', foot: 'Last 30 days' },
-    { label: "Top Skill", value: "Clarity", icon: TrendingUp, color: 'var(--accent-teal)', foot: 'Consistently strong' },
-    { label: "Focus Area", value: "Pacing", icon: AlertTriangle, color: '#e89050', foot: 'Needs attention' },
+    { label: "Interviews Completed", value: loading ? "—" : totalInterviews.toString(), icon: CheckCircle2, color: 'var(--gold)', foot: 'All time' },
+    { label: "Average Score", value: loading ? "—" : avgScore.toString(), sub: "/ 100", icon: Award, color: '#7ab8e8', foot: 'All time' },
+    { label: "Top Skill", value: loading ? "—" : topSkill, icon: TrendingUp, color: 'var(--accent-teal)', foot: 'Consistently strong' },
+    { label: "Focus Area", value: loading ? "—" : focusArea, icon: AlertTriangle, color: '#e89050', foot: 'Needs attention' },
   ];
 
-  const recentInterviews = [
-    { id: 1, role: "Software Engineer", score: 76, date: "Aug 18, 2026", type: "Technical", difficulty: "Intermediate" },
-    { id: 2, role: "Frontend Developer", score: 81, date: "Aug 12, 2026", type: "Technical", difficulty: "Advanced" },
-    { id: 3, role: "Backend Developer", score: 74, date: "Aug 05, 2026", type: "Mixed", difficulty: "Intermediate" },
-  ];
+  const recentInterviews = historyData.slice(0, 3).map(item => ({
+    id: item.id,
+    role: item.role,
+    score: item.overall_score || 0,
+    date: new Date(item.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    type: item.type,
+    difficulty: item.difficulty || 'Standard'
+  }));
 
   const scoreColor = (s) => s >= 80 ? 'var(--accent-teal)' : s >= 70 ? 'var(--gold)' : '#e89050';
 
-  const weekStats = [
-    { label: 'Sessions This Week', value: '2', icon: Flame, color: 'var(--gold)' },
-    { label: 'Best Score', value: '81', icon: Target, color: 'var(--accent-teal)' },
-    { label: 'Avg WPM', value: '134', icon: Gauge, color: '#7ab8e8' },
-  ];
+  const weekStats = (() => {
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    const thisWeek = historyData.filter(d => new Date(d.created_at) > oneWeekAgo);
+    const weekTotal = thisWeek.length;
+    const weekBest = weekTotal > 0 ? Math.max(...thisWeek.map(d => d.overall_score || 0)) : 0;
+    const weekAvgWpm = weekTotal > 0 ? Math.round(thisWeek.reduce((acc, d) => acc + (d.avg_wpm || 0), 0) / weekTotal) : 0;
+
+    return [
+      { label: 'Sessions This Week', value: loading ? "—" : weekTotal.toString(), icon: Flame, color: 'var(--gold)' },
+      { label: 'Best Score', value: loading ? "—" : weekBest.toString(), icon: Target, color: 'var(--accent-teal)' },
+      { label: 'Avg WPM', value: loading ? "—" : weekAvgWpm.toString(), icon: Gauge, color: '#7ab8e8' },
+    ];
+  })();
 
   const firstName = user?.name?.split(' ')[0] || 'Rida';
 

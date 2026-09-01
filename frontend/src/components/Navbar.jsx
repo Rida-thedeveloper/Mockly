@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Mic, BarChart2, History, LayoutDashboard, Settings, LogIn, Award, Menu, X } from 'lucide-react';
+import { Mic, BarChart2, History, LayoutDashboard, Settings, LogIn, Award, Menu, X, LogOut } from 'lucide-react';
+import { supabase } from '../supabaseClient';
 
 export default function Navbar({ currentPage, setCurrentPage, user }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -66,8 +67,8 @@ export default function Navbar({ currentPage, setCurrentPage, user }) {
                     transition: 'all 0.15s ease',
                     fontFamily: "'DM Sans', sans-serif",
                   }}
-                  onMouseEnter={e => { if (!isActive) { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.background = 'var(--surface-2)'; }}}
-                  onMouseLeave={e => { if (!isActive) { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent'; }}}
+                  onMouseEnter={e => { if (!isActive) { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.background = 'var(--surface-2)'; } }}
+                  onMouseLeave={e => { if (!isActive) { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent'; } }}
                 >
                   <Icon size={14} />
                   {item.label}
@@ -78,24 +79,26 @@ export default function Navbar({ currentPage, setCurrentPage, user }) {
 
           {/* Right Actions */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button
-              onClick={() => setCurrentPage('login')}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '7px 14px', borderRadius: 8,
-                background: 'transparent',
-                border: '1px solid var(--border)',
-                color: 'var(--text-secondary)',
-                fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                transition: 'all 0.15s',
-                fontFamily: "'DM Sans', sans-serif",
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.4)'; e.currentTarget.style.color = 'var(--gold)'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
-            >
-              <LogIn size={13} />
-              Sign In
-            </button>
+            {!user && (
+              <button
+                onClick={() => setCurrentPage('login')}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '7px 14px', borderRadius: 8,
+                  background: 'transparent',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-secondary)',
+                  fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                  transition: 'all 0.15s',
+                  fontFamily: "'DM Sans', sans-serif",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.4)'; e.currentTarget.style.color = 'var(--gold)'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+              >
+                <LogIn size={13} />
+                Sign In
+              </button>
+            )}
 
             <button
               onClick={() => setCurrentPage('setup')}
@@ -131,6 +134,28 @@ export default function Navbar({ currentPage, setCurrentPage, user }) {
                 <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)' }}>
                   {user.name.split(' ')[0]}
                 </span>
+              </button>
+            )}
+
+            {user && (
+              <button
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  setCurrentPage('landing');
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '7px 11px', borderRadius: 8,
+                  background: 'transparent', border: '1px solid transparent',
+                  color: 'var(--text-secondary)',
+                  fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                  transition: 'all 0.15s',
+                  fontFamily: "'DM Sans', sans-serif",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent-rose)'; }}
+                onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-secondary)'; }}
+              >
+                <LogOut size={13} />
               </button>
             )}
 

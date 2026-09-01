@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '../supabaseClient';
 import {
   Award,
   AlertCircle,
@@ -167,52 +168,146 @@ function ScoreRing({ score }) {
   );
 }
 
-export default function FinalReportPage({ setCurrentPage, recordedAnswers }) {
-  const hasAnswers = Object.keys(recordedAnswers).length > 0;
-  const answerCount = Object.keys(recordedAnswers).length;
+export default function FinalReportPage({ setCurrentPage, recordedAnswers, interviewSetup }) {
+  const answerKeys = Object.keys(recordedAnswers);
+  const hasAnswers = answerKeys.length > 0;
+  const answerCount = answerKeys.length;
+  const [hasSaved, setHasSaved] = useState(false);
 
-  // Score comes from the ML pipeline; null until that lands.
-  const score = null;
+  let totalRelevance = 0;
+  let totalWpm = 0;
+  let totalFillers = 0;
+  let totalPauses = 0;
+  let hesitationCounts = { Low: 0, Medium: 0, High: 0 };
+  let validRelevanceCount = 0;
+  let validWpmCount = 0;
+
+  answerKeys.forEach(key => {
+    const ans = recordedAnswers[key];
+    if (ans.relevance?.score != null) {
+      totalRelevance += ans.relevance.score;
+      validRelevanceCount++;
+    }
+    if (ans.features?.wpm != null) {
+      totalWpm += ans.features.wpm;
+      validWpmCount++;
+    }
+    if (ans.features?.filler_count != null) {
+      totalFillers += ans.features.filler_count;
+    }
+    if (ans.features?.pause_count != null) {
+      totalPauses += ans.features.pause_count;
+    }
+    if (ans.hesitation?.prediction) {
+      hesitationCounts[ans.hesitation.prediction] = (hesitationCounts[ans.hesitation.prediction] || 0) + 1;
+    }
+  });
+
+  const avgRelevance = validRelevanceCount > 0 ? Math.round(totalRelevance / validRelevanceCount) : null;
+  const avgWpm = validWpmCount > 0 ? Math.round(totalWpm / validWpmCount) : null;
+
+  let primaryHesitation = '—';
+  if (hasAnswers) {
+    primaryHesitation = Object.keys(hesitationCounts).reduce((a, b) => hesitationCounts[a] > hesitationCounts[b] ? a : b);
+  }
+
+  // Calculate Overall Score transparently
+  let score = null;
+  if (avgRelevance != null && avgWpm != null) {
+    const relevanceScore = avgRelevance; // 0-100
+
+    let paceScore = 100;
+    if (avgWpm < 110) paceScore = Math.max(0, (avgWpm / 110) * 100);
+    else if (avgWpm > 160) paceScore = Math.max(0, (1 - (avgWpm - 160) / 100) * 100);
+
+    let hesitationScore = 100;
+    if (primaryHesitation === 'Medium') hesitationScore = 50;
+    if (primaryHesitation === 'High') hesitationScore = 0;
+
+    let fluencyScore = Math.max(0, 100 - (totalFillers * 2) - (totalPauses * 2));
+
+    score = Math.round((relevanceScore * 0.4) + (paceScore * 0.2) + (hesitationScore * 0.2) + (fluencyScore * 0.2));
+  }
+
+  useEffect(() => {
+    if (hasAnswers && score != null && !hasSaved) {
+      async function saveInterview() {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+
+          const sId = interviewSetup?.sessionId || 'legacy';
+          if (sId !== 'legacy') {
+            const { data: existing } = await supabase
+              .from('interviews')
+              .select('id')
+              .eq('user_id', user.id)
+              .eq('recorded_answers->>sessionId', sId);
+
+            if (existing && existing.length > 0) {
+              setHasSaved(true);
+              return;
+            }
+          }
+
+          await supabase.from('interviews').insert({
+            user_id: user.id,
+            role: interviewSetup?.role || 'Unknown',
+            difficulty: interviewSetup?.difficulty || 'Standard',
+            type: interviewSetup?.type || 'Standard',
+            question_count: answerCount,
+            overall_score: score,
+            avg_wpm: avgWpm,
+            total_fillers: totalFillers,
+            total_pauses: totalPauses,
+            primary_hesitation: primaryHesitation,
+            avg_relevance: avgRelevance,
+            recorded_answers: { ...recordedAnswers, sessionId: sId }
+          });
+        } catch (e) {
+          console.error('Failed to save interview', e);
+        }
+      }
+      saveInterview();
+      setHasSaved(true);
+    }
+  }, [hasAnswers, score, avgWpm, totalFillers, totalPauses, primaryHesitation, avgRelevance, recordedAnswers, interviewSetup, hasSaved, answerCount]);
 
   const metrics = [
-    { label: 'Answer Relevance', value: '—', icon: Award, color: 'var(--gold)' },
-    { label: 'Speaking Pace', value: '—', icon: Zap, color: 'var(--accent-blue)' },
-    { label: 'Hesitation Level', value: '—', icon: Activity, color: '#a078d0' },
-    { label: 'Filler Words', value: '—', icon: MessageSquare, color: 'var(--accent-rose)' },
-    { label: 'Pause Count', value: '—', icon: Clock, color: 'var(--accent-teal)' },
-    { label: 'Acoustic Clarity', value: '—', icon: CheckCircle2, color: '#5cba7d' },
+    { label: 'Answer Relevance', value: avgRelevance != null ? `${avgRelevance}%` : '—', icon: Award, color: 'var(--gold)' },
+    { label: 'Speaking Pace', value: avgWpm != null ? `${avgWpm} WPM` : '—', icon: Zap, color: 'var(--accent-blue)' },
+    { label: 'Hesitation Level', value: primaryHesitation, icon: Activity, color: '#a078d0' },
+    { label: 'Filler Words', value: hasAnswers ? totalFillers : '—', icon: MessageSquare, color: 'var(--accent-rose)' },
+    { label: 'Pause Count', value: hasAnswers ? totalPauses : '—', icon: Clock, color: 'var(--accent-teal)' },
+    { label: 'Acoustic Clarity', value: 'N/A', icon: CheckCircle2, color: '#5cba7d' },
+  ];
+
+  // Dynamically generate insights
+  const strengthsItems = [];
+  if (avgWpm >= 110 && avgWpm <= 160) strengthsItems.push('Excellent speaking pace, maintaining a steady and professional cadence.');
+  if (primaryHesitation === 'Low') strengthsItems.push('Minimal hesitation, projecting strong confidence.');
+  if (avgRelevance >= 70) strengthsItems.push('High relevance in answers, addressing the core of the questions effectively.');
+  if (hasAnswers && totalFillers <= 3) strengthsItems.push('Very clean speech with minimal use of filler words.');
+  if (strengthsItems.length === 0) strengthsItems.push('Completed the interview successfully.');
+
+  const improveItems = [];
+  if (avgWpm != null && avgWpm < 110) improveItems.push('Speaking pace is on the slower side. Try to maintain a slightly more energetic cadence.');
+  if (avgWpm != null && avgWpm > 160) improveItems.push('Speaking pace is quite fast. Remember to slow down and articulate clearly.');
+  if (primaryHesitation === 'Medium' || primaryHesitation === 'High') improveItems.push('Noticeable hesitation detected. Practice structured answering to reduce pauses.');
+  if (avgRelevance != null && avgRelevance < 70) improveItems.push('Some answers drifted from the core topic. Use the STAR method to stay on track.');
+  if (hasAnswers && totalFillers > 3) improveItems.push('Frequent use of filler words detected. Try using deliberate pauses instead.');
+  if (improveItems.length === 0) improveItems.push('Consistent performance with no major technical red flags.');
+
+  const recItems = [
+    'Practice 2–3 mock sessions per week to build verbal confidence.',
+    'Use structured answer models (STAR / Problem-Solution-Result).',
+    'Listen back to your audio recordings in the Interview Room player.',
   ];
 
   const insights = [
-    {
-      icon: CheckCircle2,
-      color: 'var(--accent-teal)',
-      title: 'Strengths',
-      items: [
-        'Consistent response structure and technical terminology.',
-        'Clear microphone audio signal captured via browser MediaRecorder.',
-        'Completed interview questions within requested timeline limits.',
-      ],
-    },
-    {
-      icon: AlertCircle,
-      color: 'var(--gold)',
-      title: 'Areas to Improve',
-      items: [
-        'Reduce initial hesitation pauses before commencing detailed explanations.',
-        'Maintain steady cadence during complex database and OOP questions.',
-      ],
-    },
-    {
-      icon: TrendingUp,
-      color: 'var(--accent-blue)',
-      title: 'Recommendations',
-      items: [
-        'Practice 2–3 mock sessions per week to build verbal confidence.',
-        'Use structured answer models (STAR / Problem-Solution-Result).',
-        'Listen back to your audio recordings in the Interview Room player.',
-      ],
-    },
+    { icon: CheckCircle2, color: 'var(--accent-teal)', title: 'Strengths', items: strengthsItems },
+    { icon: AlertCircle, color: 'var(--gold)', title: 'Areas to Improve', items: improveItems },
+    { icon: TrendingUp, color: 'var(--accent-blue)', title: 'Recommendations', items: recItems },
   ];
 
   const sessionMeta = [
@@ -404,7 +499,7 @@ export default function FinalReportPage({ setCurrentPage, recordedAnswers }) {
                     margin: 0,
                   }}
                 >
-                  Awaiting ML scoring pipeline
+                  {hasAnswers ? 'Derived from ML metrics' : 'Awaiting responses'}
                 </p>
               </div>
             </div>
@@ -519,7 +614,7 @@ export default function FinalReportPage({ setCurrentPage, recordedAnswers }) {
                 }}
               >
                 {hasAnswers
-                  ? 'Awaiting ML scoring pipeline integration'
+                  ? 'Aggregated from all submitted responses'
                   : 'Complete an interview to generate your report'}
               </p>
             </div>

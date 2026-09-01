@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { GrainGradient } from '@paper-design/shaders-react';
 import { ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '../supabaseClient';
 
 /* ── Icons ──────────────────────────────────────────────────── */
 function GoogleIcon() {
@@ -146,6 +147,10 @@ function SocialButton({ icon, label, onClick }) {
 export default function LoginPage({ setCurrentPage, setUser, onAuth }) {
   const [mode, setMode] = useState('signup'); // 'signup' | 'signin'
 
+  const [authError, setAuthError] = useState('');
+  const [authSuccess, setAuthSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
+
   // Sign-up state
   const [suFirst, setSuFirst] = useState('');
   const [suLast, setSuLast] = useState('');
@@ -158,17 +163,47 @@ export default function LoginPage({ setCurrentPage, setUser, onAuth }) {
   const [siEmail, setSiEmail] = useState('');
   const [siPassword, setSiPassword] = useState('');
 
-  function handleSignUp(e) {
+  async function handleSignUp(e) {
     e.preventDefault();
     if (!agreeTerms) return;
-    setUser({ name: `${suFirst} ${suLast}`.trim() || 'User', email: suEmail || 'user@mockly.dev' });
-    if (onAuth) onAuth(); else setCurrentPage('dashboard');
+    setAuthError('');
+    setLoading(true);
+    const { data, error } = await supabase.auth.signUp({
+      email: suEmail,
+      password: suPassword,
+      options: {
+        data: {
+          first_name: suFirst,
+          last_name: suLast,
+        }
+      }
+    });
+    setLoading(false);
+    if (error) {
+      setAuthError(error.message);
+    } else {
+      if (!data.session) {
+        setAuthSuccess("Please check your email to confirm your account.");
+      } else {
+        if (onAuth) onAuth(); else setCurrentPage('dashboard');
+      }
+    }
   }
 
-  function handleSignIn(e) {
+  async function handleSignIn(e) {
     e.preventDefault();
-    setUser({ name: siEmail.split('@')[0] || 'User', email: siEmail || 'user@mockly.dev' });
-    if (onAuth) onAuth(); else setCurrentPage('dashboard');
+    setAuthError('');
+    setLoading(true);
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: siEmail,
+      password: siPassword,
+    });
+    setLoading(false);
+    if (error) {
+      setAuthError(error.message);
+    } else {
+      if (onAuth) onAuth(); else setCurrentPage('dashboard');
+    }
   }
 
   return (
@@ -283,6 +318,8 @@ export default function LoginPage({ setCurrentPage, setUser, onAuth }) {
                     </CheckboxLine>
                   </div>
 
+                  {authError && <div style={{ padding: '10px 14px', background: 'rgba(212,106,106,0.1)', border: '1px solid rgba(212,106,106,0.3)', borderRadius: 10, color: 'var(--accent-rose)', fontSize: 13, marginBottom: 4 }}>{authError}</div>}
+                  {authSuccess && <div style={{ padding: '10px 14px', background: 'rgba(61,184,160,0.1)', border: '1px solid rgba(61,184,160,0.3)', borderRadius: 10, color: '#3db8a0', fontSize: 13, marginBottom: 4 }}>{authSuccess}</div>}
                   <button
                     type="submit"
                     disabled={!agreeTerms}
@@ -352,6 +389,7 @@ export default function LoginPage({ setCurrentPage, setUser, onAuth }) {
                     <span>Demo mode — clicking Sign In opens your Dashboard.</span>
                   </div>
 
+                  {authError && <div style={{ padding: '10px 14px', background: 'rgba(212,106,106,0.1)', border: '1px solid rgba(212,106,106,0.3)', borderRadius: 10, color: 'var(--accent-rose)', fontSize: 13, marginBottom: 4 }}>{authError}</div>}
                   <button
                     type="submit"
                     style={{

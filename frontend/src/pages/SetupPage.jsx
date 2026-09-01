@@ -316,7 +316,7 @@ export default function SetupPage({ setCurrentPage, interviewSetup, setInterview
   ];
 
   const handleStart = () => {
-    setInterviewSetup({ role, difficulty, type, questionCount: Number(questionCount) });
+    setInterviewSetup({ role, difficulty, type, questionCount: Number(questionCount), sessionId: crypto.randomUUID() });
     setCurrentPage('interview');
   };
 

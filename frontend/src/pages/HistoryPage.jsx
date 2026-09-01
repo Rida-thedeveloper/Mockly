@@ -1,19 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Calendar, Code, Database, Cpu, CheckCircle,
-  ArrowRight, Layers, TrendingUp, Award, HelpCircle,
+  ArrowRight, Layers, TrendingUp, Award, HelpCircle, Trash2
 } from 'lucide-react';
 import ScrollStroke from '../components/ScrollStroke';
+import { supabase } from '../supabaseClient';
 
 export default function HistoryPage({ setCurrentPage }) {
-  const historyData = [
-    { id: 1, date: 'Aug 18, 2026', role: 'Software Engineer',   score: 76, icon: Code,     type: 'Technical',  questions: 5 },
-    { id: 2, date: 'Aug 12, 2026', role: 'Frontend Developer',  score: 81, icon: Code,     type: 'Technical',  questions: 5 },
-    { id: 3, date: 'Aug 05, 2026', role: 'Backend Developer',   score: 74, icon: Database, type: 'Mixed',      questions: 10 },
-    { id: 4, date: 'Jul 28, 2026', role: 'AI/ML Engineer',      score: 79, icon: Cpu,      type: 'Technical',  questions: 5 },
-    { id: 5, date: 'Jul 20, 2026', role: 'Data Analyst',        score: 72, icon: Database, type: 'Behavioral', questions: 5 },
-  ];
+  const [historyData, setHistoryData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      const { data, error } = await supabase
+        .from('interviews')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        const mapped = data.map(d => {
+          let icon = Code;
+          const r = (d.role || '').toLowerCase();
+          if (r.includes('ai') || r.includes('ml')) icon = Cpu;
+          else if (r.includes('backend') || r.includes('data')) icon = Database;
+          return {
+            id: d.id,
+            date: new Date(d.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            role: d.role,
+            score: d.overall_score || 0,
+            icon,
+            type: d.type,
+            questions: d.question_count || 0
+          };
+        });
+        setHistoryData(mapped);
+      }
+      setLoading(false);
+    }
+    fetchData();
+  }, []);
 
   function scoreColor(s) {
     if (s >= 80) return 'var(--accent-teal)';
@@ -26,9 +52,9 @@ export default function HistoryPage({ setCurrentPage }) {
   const [activeFilter, setActiveFilter] = useState('All Sessions');
 
   const summaryStats = [
-    { icon: Layers,     label: 'Total',     value: '5 Sessions',          color: 'var(--accent-blue)' },
-    { icon: TrendingUp, label: 'Average',   value: 'Avg Score: 76.4',     color: 'var(--gold)' },
-    { icon: Award,      label: 'Personal Best', value: 'Best: 81 (Frontend Dev)', color: 'var(--accent-teal)' },
+    { icon: Layers, label: 'Total', value: `${historyData.length} Session${historyData.length !== 1 ? 's' : ''}`, color: 'var(--accent-blue)' },
+    { icon: TrendingUp, label: 'Average', value: `Avg Score: ${historyData.length > 0 ? Math.round(historyData.reduce((acc, row) => acc + row.score, 0) / historyData.length) : '0'}`, color: 'var(--gold)' },
+    { icon: Award, label: 'Personal Best', value: `Best: ${historyData.length > 0 ? Math.max(...historyData.map(r => r.score)) : '0'}`, color: 'var(--accent-teal)' },
   ];
 
   const [hoveredId, setHoveredId] = useState(null);
@@ -229,196 +255,222 @@ export default function HistoryPage({ setCurrentPage }) {
 
         {/* ── Session list ───────────────────────────────────── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 26 }}>
-          <AnimatePresence initial={false}>
-            {historyData.map((row, i) => {
-              const Icon = row.icon;
-              const color = scoreColor(row.score);
-              const isHovered = hoveredId === row.id;
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)', fontFamily: "'DM Mono', monospace", fontSize: 13, letterSpacing: '0.1em' }}>
+              LOADING HISTORY...
+            </div>
+          ) : historyData.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
+              <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 15, margin: 0 }}>No sessions found.</p>
+              <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, opacity: 0.6, margin: '8px 0 0' }}>Complete an interview to see it here.</p>
+            </div>
+          ) : (
+            <AnimatePresence initial={false}>
+              {historyData.map((row, i) => {
+                const Icon = row.icon;
+                const color = scoreColor(row.score);
+                const isHovered = hoveredId === row.id;
 
-              return (
-                <motion.div
-                  key={row.id}
-                  layout
-                  initial={{ opacity: 0, x: -16 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -16 }}
-                  transition={{ duration: 0.45, delay: 0.22 + i * 0.06, ease: [0.22, 1, 0.36, 1] }}
-                  whileHover={{ backgroundColor: 'var(--surface-2)', x: 2 }}
-                  onHoverStart={() => setHoveredId(row.id)}
-                  onHoverEnd={() => setHoveredId(null)}
-                  style={{
-                    background: 'var(--surface)',
-                    border: '1px solid var(--border)',
-                    borderLeft: `2px solid ${isHovered ? color : 'transparent'}`,
-                    borderRadius: 14,
-                    padding: '18px 20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 18,
-                    flexWrap: 'wrap',
-                    transition: 'border-color 0.25s ease',
-                  }}
-                >
-                  {/* Score ring badge */}
+                return (
                   <motion.div
-                    initial={{ scale: 0.7, opacity: 0 }}
-                    animate={{ scale: [0.7, 1.12, 1], opacity: 1 }}
-                    transition={{ duration: 0.5, delay: 0.3 + i * 0.06, ease: 'easeOut' }}
+                    key={row.id}
+                    layout
+                    initial={{ opacity: 0, x: -16 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -16 }}
+                    transition={{ duration: 0.45, delay: 0.22 + i * 0.06, ease: [0.22, 1, 0.36, 1] }}
+                    whileHover={{ backgroundColor: 'var(--surface-2)', x: 2 }}
+                    onHoverStart={() => setHoveredId(row.id)}
+                    onHoverEnd={() => setHoveredId(null)}
                     style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: '50%',
-                      flexShrink: 0,
+                      background: 'var(--surface)',
+                      border: '1px solid var(--border)',
+                      borderLeft: `2px solid ${isHovered ? color : 'transparent'}`,
+                      borderRadius: 14,
+                      padding: '18px 20px',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      border: `1px solid ${color}`,
-                      background: 'var(--surface-2)',
-                      boxShadow: isHovered ? `0 0 16px -4px ${color}` : 'none',
-                    }}
-                  >
-                    <span
-                      className="font-display"
-                      style={{ fontSize: 17, fontWeight: 700, color }}
-                    >
-                      {row.score}
-                    </span>
-                  </motion.div>
-
-                  {/* Role + type */}
-                  <div style={{ minWidth: 172, flex: '1 1 172px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <Icon size={14} style={{ color: 'var(--gold)', flexShrink: 0 }} />
-                      <p
-                        style={{
-                          margin: 0,
-                          fontSize: 15,
-                          fontWeight: 600,
-                          color: 'var(--text-primary)',
-                          fontFamily: "'DM Sans', sans-serif",
-                        }}
-                      >
-                        {row.role}
-                      </p>
-                    </div>
-                    <span
-                      style={{
-                        display: 'inline-block',
-                        marginTop: 7,
-                        padding: '3px 9px',
-                        borderRadius: 5,
-                        fontSize: 10,
-                        fontWeight: 600,
-                        letterSpacing: '0.08em',
-                        textTransform: 'uppercase',
-                        fontFamily: "'DM Mono', monospace",
-                        color: 'var(--accent-blue)',
-                        background: 'rgba(74,143,212,0.1)',
-                        border: '1px solid rgba(74,143,212,0.22)',
-                      }}
-                    >
-                      {row.type}
-                    </span>
-                  </div>
-
-                  {/* Meta: difficulty, questions, date */}
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 14,
+                      gap: 18,
                       flexWrap: 'wrap',
-                      flex: '1 1 auto',
+                      transition: 'border-color 0.25s ease',
                     }}
                   >
-                    <span className="tag-surface">{difficultyFor(row.questions)}</span>
-
-                    <span
+                    {/* Score ring badge */}
+                    <motion.div
+                      initial={{ scale: 0.7, opacity: 0 }}
+                      animate={{ scale: [0.7, 1.12, 1], opacity: 1 }}
+                      transition={{ duration: 0.5, delay: 0.3 + i * 0.06, ease: 'easeOut' }}
                       style={{
-                        display: 'inline-flex',
+                        width: 48,
+                        height: 48,
+                        borderRadius: '50%',
+                        flexShrink: 0,
+                        display: 'flex',
                         alignItems: 'center',
-                        gap: 5,
-                        fontSize: 11,
-                        color: 'var(--text-muted)',
-                        fontFamily: "'DM Mono', monospace",
+                        justifyContent: 'center',
+                        border: `1px solid ${color}`,
+                        background: 'var(--surface-2)',
+                        boxShadow: isHovered ? `0 0 16px -4px ${color}` : 'none',
                       }}
                     >
-                      <HelpCircle size={12} />
-                      {row.questions}Q
-                    </span>
+                      <span
+                        className="font-display"
+                        style={{ fontSize: 17, fontWeight: 700, color }}
+                      >
+                        {row.score}
+                      </span>
+                    </motion.div>
 
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        fontSize: 11,
-                        color: 'var(--text-secondary)',
-                        fontFamily: "'DM Mono', monospace",
-                      }}
-                    >
-                      <Calendar size={12} style={{ color: 'var(--text-muted)' }} />
-                      {row.date}
-                    </span>
-                  </div>
-
-                  {/* Score + status */}
-                  <div style={{ textAlign: 'right', flexShrink: 0, minWidth: 104 }}>
-                    <motion.p
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: [0.8, 1.1, 1], opacity: 1 }}
-                      transition={{ duration: 0.5, delay: 0.34 + i * 0.06, ease: 'easeOut' }}
-                      className="font-display"
-                      style={{ margin: 0, fontSize: 28, fontWeight: 700, lineHeight: 1, color }}
-                    >
-                      {row.score}
+                    {/* Role + type */}
+                    <div style={{ minWidth: 172, flex: '1 1 172px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Icon size={14} style={{ color: 'var(--gold)', flexShrink: 0 }} />
+                        <p
+                          style={{
+                            margin: 0,
+                            fontSize: 15,
+                            fontWeight: 600,
+                            color: 'var(--text-primary)',
+                            fontFamily: "'DM Sans', sans-serif",
+                          }}
+                        >
+                          {row.role}
+                        </p>
+                      </div>
                       <span
                         style={{
-                          fontSize: 12,
-                          fontWeight: 400,
+                          display: 'inline-block',
+                          marginTop: 7,
+                          padding: '3px 9px',
+                          borderRadius: 5,
+                          fontSize: 10,
+                          fontWeight: 600,
+                          letterSpacing: '0.08em',
+                          textTransform: 'uppercase',
+                          fontFamily: "'DM Mono', monospace",
+                          color: 'var(--accent-blue)',
+                          background: 'rgba(74,143,212,0.1)',
+                          border: '1px solid rgba(74,143,212,0.22)',
+                        }}
+                      >
+                        {row.type}
+                      </span>
+                    </div>
+
+                    {/* Meta: difficulty, questions, date */}
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 14,
+                        flexWrap: 'wrap',
+                        flex: '1 1 auto',
+                      }}
+                    >
+                      <span className="tag-surface">{difficultyFor(row.questions)}</span>
+
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 5,
+                          fontSize: 11,
                           color: 'var(--text-muted)',
-                          marginLeft: 3,
                           fontFamily: "'DM Mono', monospace",
                         }}
                       >
-                        /100
+                        <HelpCircle size={12} />
+                        {row.questions}Q
                       </span>
-                    </motion.p>
 
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 5,
-                        marginTop: 9,
-                        padding: '3px 10px',
-                        borderRadius: 999,
-                        fontSize: 10,
-                        letterSpacing: '0.05em',
-                        fontFamily: "'DM Mono', monospace",
-                        color: 'var(--accent-teal)',
-                        background: 'rgba(61,184,160,0.1)',
-                        border: '1px solid rgba(61,184,160,0.25)',
-                      }}
-                    >
-                      <CheckCircle size={10} />
-                      Completed
-                    </span>
-                  </div>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          fontSize: 11,
+                          color: 'var(--text-secondary)',
+                          fontFamily: "'DM Mono', monospace",
+                        }}
+                      >
+                        <Calendar size={12} style={{ color: 'var(--text-muted)' }} />
+                        {row.date}
+                      </span>
+                    </div>
 
-                  {/* Action */}
-                  <button
-                    className="btn-surface"
-                    onClick={() => setCurrentPage('report')}
-                    style={{ flexShrink: 0 }}
-                  >
-                    View Report
-                    <ArrowRight size={13} />
-                  </button>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
+                    {/* Score + status */}
+                    <div style={{ textAlign: 'right', flexShrink: 0, minWidth: 104 }}>
+                      <motion.p
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: [0.8, 1.1, 1], opacity: 1 }}
+                        transition={{ duration: 0.5, delay: 0.34 + i * 0.06, ease: 'easeOut' }}
+                        className="font-display"
+                        style={{ margin: 0, fontSize: 28, fontWeight: 700, lineHeight: 1, color }}
+                      >
+                        {row.score}
+                        <span
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 400,
+                            color: 'var(--text-muted)',
+                            marginLeft: 3,
+                            fontFamily: "'DM Mono', monospace",
+                          }}
+                        >
+                          /100
+                        </span>
+                      </motion.p>
+
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 5,
+                          marginTop: 9,
+                          padding: '3px 10px',
+                          borderRadius: 999,
+                          fontSize: 10,
+                          letterSpacing: '0.05em',
+                          fontFamily: "'DM Mono', monospace",
+                          color: 'var(--accent-teal)',
+                          background: 'rgba(61,184,160,0.1)',
+                          border: '1px solid rgba(61,184,160,0.25)',
+                        }}
+                      >
+                        <CheckCircle size={10} />
+                        Completed
+                      </span>
+                    </div>
+
+                    {/* Action */}
+                    <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                      <button
+                        className="btn-surface"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (window.confirm("Are you sure you want to delete this session?")) {
+                            setHistoryData(prev => prev.filter(r => r.id !== row.id));
+                            await supabase.from('interviews').delete().eq('id', row.id);
+                          }
+                        }}
+                        style={{ padding: '8px 12px' }}
+                        title="Delete Session"
+                      >
+                        <Trash2 size={13} color="var(--accent-rose)" />
+                      </button>
+                      <button
+                        className="btn-surface"
+                        onClick={() => setCurrentPage('report')}
+                      >
+                        View Report
+                        <ArrowRight size={13} />
+                      </button>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          )}
         </div>
 
         {/* ── CTA footer ─────────────────────────────────────── */}

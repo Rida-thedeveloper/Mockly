@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import IntroScreen from './components/IntroScreen';
+import { supabase } from './supabaseClient';
 
 // 9 Frontend Pages
 import LandingPage from './pages/LandingPage';
@@ -26,10 +27,27 @@ export default function App() {
   const [introShown, setIntroShown] = useState(false);
   const [currentPage, setCurrentPage] = useState('landing');
 
-  const [user, setUser] = useState({
-    name: 'Rida Fatima',
-    email: 'rida@example.com'
-  });
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setUser({ name: session.user.user_metadata?.first_name || session.user.email.split('@')[0] || 'User', email: session.user.email });
+        setAuthDone(true);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        setUser({ name: session.user.user_metadata?.first_name || session.user.email.split('@')[0] || 'User', email: session.user.email });
+        setAuthDone(true);
+      } else {
+        setUser(null);
+        setAuthDone(false);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   const [interviewSetup, setInterviewSetup] = useState({
     role: 'Software Engineer',
@@ -81,6 +99,7 @@ export default function App() {
           <FinalReportPage
             setCurrentPage={setCurrentPage}
             recordedAnswers={recordedAnswers}
+            interviewSetup={interviewSetup}
           />
         );
       case 'history':
