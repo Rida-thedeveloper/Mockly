@@ -1,73 +1,99 @@
+"""
+speech_to_text.py
+-----------------
+Transcription via Groq Speech-to-Text API (whisper-large-v3-turbo).
+
+Local Whisper / PyTorch removed to eliminate Railway OOM issues.
+The function interface (transcribe_audio_file) is unchanged so all
+downstream analysis continues to work without modification.
+
+NOTE: imageio_ffmpeg PATH setup is retained because librosa / audio
+features still require an ffmpeg executable at runtime.
+"""
+
 import logging
 import os
-import shutil
 
 logger = logging.getLogger(__name__)
 
-# Ensure FFmpeg is available and named ffmpeg.exe for Whisper's subprocess execution
+# ── FFmpeg PATH setup ─────────────────────────────────────────────────────────
+# Keep this block: librosa uses ffmpeg to decode .webm for audio-feature
+# extraction.  Do NOT remove until audio_features.py is verified to not need it.
 try:
     import imageio_ffmpeg
+    import shutil
+
     ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
     ffmpeg_dir = os.path.dirname(ffmpeg_exe)
-    target_ffmpeg_exe = os.path.join(ffmpeg_dir, "ffmpeg.exe")
-    
-    # Copy/Alias the binary to 'ffmpeg.exe' so Whisper subprocess can locate it by name
-    if not os.path.exists(target_ffmpeg_exe):
-        shutil.copyfile(ffmpeg_exe, target_ffmpeg_exe)
-        logger.info(f"Created ffmpeg.exe alias at: {target_ffmpeg_exe}")
-        
+
+    # On Linux (Railway) the binary is already called "ffmpeg"; the alias is
+    # only needed on Windows where imageio names it differently.
+    target_ffmpeg = os.path.join(ffmpeg_dir, "ffmpeg")
+    if not os.path.exists(target_ffmpeg):
+        shutil.copyfile(ffmpeg_exe, target_ffmpeg)
+        logger.info(f"Created ffmpeg alias at: {target_ffmpeg}")
+
     if ffmpeg_dir not in os.environ.get("PATH", ""):
         os.environ["PATH"] = ffmpeg_dir + os.pathsep + os.environ.get("PATH", "")
         logger.info(f"Added FFmpeg directory to PATH: {ffmpeg_dir}")
 except Exception as err:
-    logger.warning(f"Could not setup imageio_ffmpeg alias: {err}")
+    logger.warning(f"imageio_ffmpeg PATH setup skipped: {err}")
 
-# Cache the model so we don't reload it every time
-_model = None
-_whisper_available = True
-
+# ── Groq client ───────────────────────────────────────────────────────────────
 try:
-    import whisper
+    from groq import Groq
+    _groq_available = True
 except ImportError:
-    _whisper_available = False
-    logger.warning("Whisper library not found. Falling back to mock transcription until PyTorch/Whisper installation completes.")
+    _groq_available = False
+    logger.warning("groq package not installed – transcription will return a placeholder.")
 
-def load_whisper_model():
-    global _model, _whisper_available
-    if not _whisper_available:
-        return None
-    if _model is None:
-        logger.info("Loading Whisper model... (using 'tiny' for fast download and high speed)")
-        try:
-            _model = whisper.load_model("tiny")
-            logger.info("Whisper 'tiny' model loaded successfully!")
-        except Exception as e:
-            logger.warning(f"Failed to load Whisper 'tiny', trying 'base': {e}")
-            try:
-                _model = whisper.load_model("base")
-            except Exception as e2:
-                logger.error(f"Failed to load Whisper model: {e2}")
-                return None
-    return _model
 
 def transcribe_audio_file(audio_path: str) -> str:
     """
-    Accepts an audio file path and returns the transcript using local Whisper.
+    Send an audio file to the Groq Speech-to-Text API and return the transcript.
+
+    Accepts the same file path that was previously passed to local Whisper;
+    the rest of the analysis pipeline is completely unchanged.
+
+    Returns a plain Python str in all cases (never raises so the caller's
+    try/except can decide how to handle degraded output).
     """
-    model = load_whisper_model()
-    
-    if model is None:
-        return "Audio response captured. (Whisper speech-to-text model loading)"
-    
+    if not _groq_available:
+        logger.error("groq package missing – cannot transcribe.")
+        return "Transcription unavailable: groq package not installed."
+
+    api_key = os.environ.get("GROQ_API_KEY", "").strip()
+    if not api_key:
+        logger.error("GROQ_API_KEY environment variable is not set.")
+        return "Transcription unavailable: GROQ_API_KEY not configured."
+
+    if not os.path.exists(audio_path):
+        logger.error(f"Audio file not found: {audio_path}")
+        return "Transcription unavailable: audio file missing."
+
     try:
-        # Passing an initial_prompt with filler words strongly encourages the Whisper model 
-        # to NOT filter out hesitations (like "uh", "um") from the user's speech.
-        result = model.transcribe(
-            audio_path,
-            initial_prompt="Umm, let me think, uhh, like, you know...",
-            fp16=False  # Disable FP16 warning on CPU
-        )
-        return result.get("text", "").strip()
+        client = Groq(api_key=api_key)
+        with open(audio_path, "rb") as audio_file:
+            logger.info(f"[Groq STT] Sending {audio_path} to whisper-large-v3-turbo …")
+            transcription = client.audio.transcriptions.create(
+                model="whisper-large-v3-turbo",
+                file=audio_file,
+                response_format="text",
+                # Prompt Groq/Whisper to preserve filler words exactly as local
+                # Whisper did, so hesitation analysis remains accurate.
+                prompt="Umm, let me think, uhh, like, you know...",
+                language="en",
+            )
+        # When response_format="text", the SDK returns the transcript as a
+        # plain string directly (not a structured object).
+        if isinstance(transcription, str):
+            result = transcription.strip()
+        else:
+            result = (transcription.text or "").strip()
+
+        logger.info(f"[Groq STT] Transcript received ({len(result)} chars).")
+        return result if result else "No speech detected in the recording."
+
     except Exception as err:
-        logger.error(f"Whisper transcription error: {err}")
-        return f"Audio recorded successfully. (Whisper processing notice: {err})"
+        logger.error(f"[Groq STT] Transcription error: {err}")
+        return f"Audio recorded successfully. (Transcription notice: {err})"

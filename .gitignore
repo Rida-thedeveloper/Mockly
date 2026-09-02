@@ -19,3 +19,8 @@ build/
 backend/__pycache__/
 *.webm
 *.mp3
+
+# Environment secrets — never commit real values
+.env
+.env.local
+.env.production
