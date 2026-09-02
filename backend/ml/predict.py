@@ -30,6 +30,9 @@ MODEL_V1_PATH = BASE_DIR / "models" / "hesitation_rf.joblib"
 REQUIRED_FEATURES = ["wpm", "pause_count", "speech_duration", "word_count"]
 
 
+_model_cache = None
+_model_name_cache = None
+
 def get_model_path() -> tuple[Path, str]:
     """
     Returns (model_path, model_filename).
@@ -64,10 +67,17 @@ def predict_hesitation(features: dict) -> dict:
             "model": str (e.g. "hesitation_rf_v2.joblib")
         }
     """
-    model_path, model_name = get_model_path()
+    global _model_cache, _model_name_cache
 
-    # Load model bundle
-    bundle = joblib.load(model_path)
+    if _model_cache is None:
+        model_path, model_name = get_model_path()
+        # Load model bundle once
+        bundle = joblib.load(model_path)
+        _model_cache = bundle
+        _model_name_cache = model_name
+    
+    bundle = _model_cache
+    model_name = _model_name_cache
 
     if isinstance(bundle, dict) and "model" in bundle:
         clf = bundle["model"]
@@ -103,7 +113,6 @@ def predict_hesitation(features: dict) -> dict:
         "probabilities": proba_dict,
         "model": model_name,
     }
-
 
 if __name__ == "__main__":
     # Test script self-run

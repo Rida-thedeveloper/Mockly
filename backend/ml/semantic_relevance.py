@@ -3,7 +3,13 @@ import numpy as np
 
 # Load a lightweight, CPU-friendly embeddings model locally
 MODEL_NAME = "all-MiniLM-L6-v2"
-model = SentenceTransformer(MODEL_NAME)
+_model = None
+
+def get_mapping_model():
+    global _model
+    if _model is None:
+        _model = SentenceTransformer(MODEL_NAME)
+    return _model
 
 def calculate_relevance(question: str, answer: str) -> int:
     """
@@ -20,6 +26,7 @@ def calculate_relevance(question: str, answer: str) -> int:
     if not q_text or not a_text:
         return 0
         
+    model = get_mapping_model()
     # encode as tensors
     embeddings1 = model.encode(q_text, convert_to_tensor=True)
     embeddings2 = model.encode(a_text, convert_to_tensor=True)
