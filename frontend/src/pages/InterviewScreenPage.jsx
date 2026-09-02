@@ -723,30 +723,81 @@ export default function InterviewScreenPage({
     setErrorMsg('');
     audioChunksRef.current = [];
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mr = new MediaRecorder(stream);
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+
+      // ── Diagnostics: verify we actually have a live audio track ──────────
+      const audioTracks = stream.getAudioTracks();
+      console.log('[Recording] Audio tracks:', audioTracks.length);
+      if (audioTracks.length > 0) {
+        console.log('[Recording] Track label:', audioTracks[0].label);
+        console.log('[Recording] Track enabled:', audioTracks[0].enabled);
+        console.log('[Recording] Track readyState:', audioTracks[0].readyState);
+      }
+
+      // ── Pick an audio-only mimeType so the browser doesn't default to
+      //    video/webm (vp8+opus) which produces a container mismatch when
+      //    the Blob is later relabelled as audio/webm ──────────────────────
+      const preferredTypes = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/ogg;codecs=opus',
+        'audio/ogg',
+      ];
+      const mimeType = preferredTypes.find(t => MediaRecorder.isTypeSupported(t)) || '';
+      console.log('[Recording] Selected mimeType:', mimeType || '(browser default)');
+
+      const mr = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+      console.log('[Recording] MediaRecorder.mimeType:', mr.mimeType);
       mediaRecorderRef.current = mr;
-      mr.ondataavailable = (e) => { if (e.data?.size > 0) audioChunksRef.current.push(e.data); };
+
+      mr.ondataavailable = (e) => {
+        if (e.data?.size > 0) {
+          audioChunksRef.current.push(e.data);
+          console.log('[Recording] Chunk received:', e.data.size, 'bytes | total chunks:', audioChunksRef.current.length);
+        }
+      };
+
       mr.onstop = () => {
-        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const chunks = audioChunksRef.current;
+        console.log('[Recording] Stop fired | chunks collected:', chunks.length);
+
+        // Use the recorder's actual mimeType for the Blob — never hardcode
+        // 'audio/webm' when the recorder may have used a different container.
+        const blobType = mr.mimeType || 'audio/webm';
+        const blob = new Blob(chunks, { type: blobType });
+        console.log('[Recording] Final Blob size:', blob.size, 'bytes | type:', blob.type);
+
+        if (blob.size < 1000) {
+          console.warn('[Recording] WARNING: Blob is very small — recording may be silent or empty.');
+        }
+
         setRecordedAnswers(prev => ({
           ...prev,
           [currentIdx]: {
-            blob, url: URL.createObjectURL(blob), duration: timer,
+            blob,
+            url: URL.createObjectURL(blob),
+            duration: timer,
             timestamp: new Date().toLocaleTimeString(),
             isAnalyzing: false, analyzeError: null, transcript: null, features: null,
           },
         }));
         stream.getTracks().forEach(t => t.stop());
       };
-      mr.start();
+
+      // ── Use a 250 ms timeslice so audio data is flushed periodically.
+      //    Without a timeslice, ondataavailable fires only once on stop and
+      //    some browser/OS combinations flush silence if the pipeline isn't
+      //    fully primed before the single flush occurs. ─────────────────────
+      mr.start(250);
       setIsRecording(true);
       setTimer(0);
       timerIntervalRef.current = setInterval(() => setTimer(t => t + 1), 1000);
-    } catch {
+    } catch (err) {
+      console.error('[Recording] getUserMedia error:', err);
       setErrorMsg('Microphone permission denied or device not found.');
     }
   };
+
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
