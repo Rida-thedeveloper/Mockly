@@ -1,334 +1,252 @@
 # Mockly — AI-Powered Voice Mock Interview Platform
 
-> **Tagline:** *“Practice how you communicate, not just what you know.”*
+> *"Practice how you communicate, not just what you know."*
 
 ---
 
 ## 📌 Project Overview
 
-**Mockly** is an AI-powered, voice-first mock interview platform designed specifically for students and fresh graduates.
+**Mockly** is a voice-first, AI-powered mock interview platform designed for students and fresh graduates.
 
-Traditional interview preparation tools mainly focus on **what** a candidate says. Mockly focuses on **how** the candidate communicates. It analyzes communication behaviors such as speaking pace, pauses, silence, filler words, repetitions, answer relevance, and response structure.
-
-Mockly is designed to simulate a realistic interview experience. Instead of typing answers, candidates **listen to interview questions delivered through voice and respond naturally through their microphone**.
-
-To make the experience more engaging and closer to a real interview, Mockly is also working toward integrating an **AI interviewer avatar** that will provide a human-like visual presence, deliver interview questions, and make the interaction feel more natural.
-
-The overall experience follows:
-
-> **AI Interviewer → Voice Question → Candidate Speaks → AI Analysis → Feedback → Improvement**
-
-Mockly aims to make interview preparation more realistic, personalized, measurable, and accessible for students who may not have regular access to professional interview coaching.
+Rather than evaluating *what* a candidate says, Mockly analyzes *how* they say it — speaking pace, pauses, silence ratio, filler words, repetitions, answer relevance, and hesitation patterns — then delivers immediate, personalized feedback.
 
 ---
 
-## 🎯 Problem
+## ✨ Features
 
-Students and fresh graduates may have strong technical knowledge but still struggle during interviews because of communication issues.
-
-Common problems include:
-
-* Speaking too quickly or too slowly
-* Excessive filler words such as *um, uh, like, basically*
-* Frequent hesitation
-* Long or unnecessary pauses
-* Repeating words or ideas
-* Poor answer structure
-* Answers that are not sufficiently relevant to the question
-* Difficulty identifying their own communication weaknesses
-
-Most traditional preparation platforms focus primarily on interview questions and answer content. They do not provide detailed analysis of the candidate's actual speaking behavior.
-
-### 💡 Our Solution
-
-Mockly creates a **voice-first interview simulation** where candidates speak naturally and receive AI-assisted analysis of both their answer and communication style.
-
-The goal is not simply to tell a candidate whether an answer is correct.
-
-The goal is to help them understand:
-
-> **“How did I communicate my answer, and how can I improve?”**
+| Feature | Status |
+|---|---|
+| Voice-based interview session (microphone recording) | ✅ Live |
+| Speech-to-text via Groq Whisper API | ✅ Live |
+| Audio feature extraction (WPM, pauses, silence, fillers) | ✅ Live |
+| Hesitation prediction (Random Forest classifier) | ✅ Live |
+| Semantic answer relevance (Sentence Transformers) | ✅ Live |
+| AI-generated question-level feedback | ✅ Live |
+| Final interview performance report | ✅ Live |
+| Email/password authentication (Supabase) | ✅ Live |
+| Google OAuth sign-in | ✅ Live |
+| Persistent interview history (Supabase Postgres) | ✅ Live |
+| Real progress analytics from history data | ✅ Live |
+| Mobile-responsive interview UI | ✅ Live |
+| Full session log (no truncation) | ✅ Live |
+| Interview question auto-playback (Web Speech API) | ✅ Live |
+| AI Interviewer Avatar | 🔄 Planned |
 
 ---
 
-## 🎤 Core User Experience
+## 🏗️ Architecture
 
-Mockly is designed around a realistic voice interaction.
-
-1. The user starts a mock interview.
-2. The AI interviewer presents a question through voice.
-3. The candidate listens to the question.
-4. The candidate answers through their microphone.
-5. Mockly records the response.
-6. The audio is sent to the backend.
-7. Whisper converts the response into text.
-8. Audio and transcript features are analyzed.
-9. Mockly evaluates communication and answer quality.
-10. The candidate receives question-level feedback.
-11. A final performance report summarizes the interview.
-12. The candidate can review previous attempts and track improvement.
-
-### Planned AI Interviewer Experience
-
-We are also working toward integrating an **AI interviewer avatar** that will visually represent the interviewer during the session.
-
-The avatar is intended to:
-
-* Provide a human-like interviewer presence
-* Deliver interview questions
-* Make the interaction more engaging
-* Reduce the feeling of interacting with a static application
-* Create a more realistic interview practice environment
-
-The avatar is part of the ongoing build phase and will be integrated with the existing voice-based interview flow.
-
----
-
-## ✨ Key Features
-
-### 🎙️ Voice-Based Interviews
-
-Candidates answer questions naturally using their microphone instead of typing responses.
-
-### 🔊 Voice Question Delivery
-
-Interview questions are delivered through voice to simulate an actual spoken interview.
-
-### 🤖 AI Interviewer Avatar — In Development
-
-A human-like AI interviewer avatar is being integrated to make the interview experience more natural and engaging.
-
-### 📝 AI Speech-to-Text
-
-Recorded answers are converted into transcripts using OpenAI Whisper.
-
-### 🗣️ Communication Analysis
-
-Mockly analyzes measurable communication characteristics including:
-
-* Speaking rate / WPM
-* Pauses
-* Silence ratio
-* Filler words
-* Repetitions
-* Hesitation patterns
-
-### 🧠 Answer Analysis
-
-The system is being extended to evaluate:
-
-* Question-answer relevance
-* Semantic similarity
-* Response structure
-* Answer completeness
-
-### 📊 Performance Feedback
-
-Candidates receive question-level feedback and actionable suggestions for improvement.
-
-### 📈 Progress Tracking
-
-Candidates can review previous attempts and monitor their communication improvement over time.
-
----
-
-## 🛠️ Technology Stack
-
-### Frontend
-
-* **React 19**
-* **Vite 8**
-* **JavaScript (ESNext)**
-* **Tailwind CSS v4**
-* **Lucide Icons**
-* **MediaRecorder API** — real browser microphone recording
-* **Web Speech API** — voice question playback
-
-### Backend
-
-* **Python 3.12**
-* **FastAPI** — REST API and backend services
-* **Uvicorn** — ASGI server
-* **FFmpeg** — audio format decoding and preprocessing
-* **OpenAI Whisper** — local speech-to-text using the `base` model
-
-### AI / Machine Learning
-
-The AI analysis pipeline is being developed in multiple layers:
-
-* **Whisper** — speech-to-text
-* **Librosa / Praat** — acoustic and speech analysis
-* **NLP processing** — filler words, hesitation and repetitions
-* **Sentence Transformers** — semantic question-answer similarity
-* **Random Forest** — planned scoring/classification layer for combining communication and answer-quality features
-
-### Database
-
-* **SQLite / PostgreSQL** — planned for interview sessions, results, history and progress persistence
-
----
-
-## 🧠 AI Analysis Pipeline
-
-Mockly follows a modular AI pipeline:
-
-```text
-Candidate
-    ↓
-Microphone Recording
-    ↓
-Audio Processing
-    ↓
-Whisper Speech-to-Text
-    ↓
-┌───────────────────────────────┐
-│                               │
-↓                               ↓
-Audio Feature Extraction       NLP Analysis
-│                               │
-├─ Speaking Rate                ├─ Filler Words
-├─ Pauses                       ├─ Repetitions
-├─ Silence Ratio                ├─ Hesitation
-└─ Other Speech Features        └─ Response Patterns
-│                               │
-└───────────────┬───────────────┘
-                ↓
-       Answer Relevance
-       & Structure Analysis
-                ↓
-        Performance Scoring
-                ↓
-      Personalized Feedback
-                ↓
-       Progress Tracking
 ```
-
-This modular architecture allows individual components to be developed and tested independently before being integrated into the complete interview experience.
+Browser (React/Vite) — Vercel
+        │
+        │  REST (FormData, JSON)
+        ▼
+FastAPI Backend — Railway
+        │
+        ├── Groq Speech-to-Text (Whisper large-v3-turbo via API)
+        ├── Librosa  — audio feature extraction (WPM, pauses, etc.)
+        ├── Sentence Transformers — semantic relevance scoring
+        └── Random Forest — hesitation level classification
+        
+Supabase (Postgres + Auth)
+        ├── User accounts (email/password + Google OAuth)
+        └── Interview history & session records
+```
 
 ---
 
 ## 📁 Project Structure
 
-```text
+```
 Mockly/
+├── frontend/              # React + Vite SPA (deployed on Vercel)
+│   └── src/
+│       ├── pages/
+│       │   ├── LoginPage.jsx          # Auth (email + Google OAuth)
+│       │   ├── DashboardPage.jsx      # Real user metrics
+│       │   ├── SetupPage.jsx          # Interview configuration
+│       │   ├── InterviewScreenPage.jsx# Interview session + session log
+│       │   ├── QuestionFeedbackPage.jsx
+│       │   ├── FinalReportPage.jsx    # Idempotent save + report
+│       │   ├── HistoryPage.jsx        # Past sessions from Supabase
+│       │   └── ProgressPage.jsx       # Real analytics from history
+│       └── supabaseClient.js
 │
-├── frontend/
-│   ├── public/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── Navbar.jsx
-│   │   │   └── Footer.jsx
-│   │   │
-│   │   ├── pages/
-│   │   │   ├── LandingPage.jsx
-│   │   │   ├── LoginPage.jsx
-│   │   │   ├── DashboardPage.jsx
-│   │   │   ├── SetupPage.jsx
-│   │   │   ├── InterviewScreenPage.jsx
-│   │   │   ├── QuestionFeedbackPage.jsx
-│   │   │   ├── FinalReportPage.jsx
-│   │   │   ├── HistoryPage.jsx
-│   │   │   └── ProgressPage.jsx
-│   │   │
-│   │   ├── App.jsx
-│   │   ├── index.css
-│   │   └── main.jsx
-│   │
-│   ├── package.json
-│   ├── vite.config.js
-│   └── index.html
-│
-├── backend/
+├── backend/               # Python FastAPI (deployed on Railway)
 │   ├── main.py
 │   ├── services/
-│   │   └── speech_to_text.py
-│   ├── test_whisper.py
+│   │   ├── speech_to_text.py  # Groq Whisper API
+│   │   ├── audio_features.py  # Librosa audio analysis
+│   │   ├── nlp_analysis.py    # Filler/repetition detection
+│   │   ├── feedback.py        # AI feedback generation
+│   │   └── hesitation.py      # Random Forest model
+│   ├── Procfile               # Single-worker Uvicorn for Railway
 │   └── requirements.txt
-│
-├── ml/
-│   └── README.md
-│
-├── dataset/
-│   └── README.md
 │
 └── README.md
 ```
 
 ---
 
-## 🚀 Installation & Setup
+## 🔐 Authentication
+
+Mockly uses **Supabase Auth** for user management.
+
+- **Email/Password** — standard sign-up and sign-in
+- **Google OAuth** — one-click sign-in via `supabase.auth.signInWithOAuth`
+
+After Google sign-in, Supabase redirects back to `window.location.origin`, which works correctly for both local development and production Vercel deployments automatically.
+
+### Required Supabase Configuration
+
+Before Google OAuth works, configure the following in Supabase:
+
+1. **Authentication → Providers → Google** — Enable and paste your Google OAuth Client ID and Secret.
+2. **Authentication → URL Configuration → Redirect URLs** — Add:
+   - `http://localhost:5173` (local dev)
+   - `https://your-app.vercel.app` (production)
+
+---
+
+## 🔄 Interview Flow
+
+```
+1. User signs in (email or Google)
+2. Configures interview: role, difficulty, type, question count
+3. Interview session starts — questions read aloud automatically
+4. User records audio answer via microphone
+5. Audio sent to Railway backend via POST /api/analyze
+6. Backend:
+   a. Groq Whisper → transcript
+   b. Librosa → WPM, pauses, silence ratio, fillers
+   c. Random Forest → hesitation level prediction
+   d. Sentence Transformers → answer relevance score
+   e. Feedback generation → suggestions
+7. Results displayed in the session UI
+8. User navigates questions → finishes interview
+9. Final report saved to Supabase (idempotent — one record per sessionId)
+10. History and Progress pages reflect new data
+```
+
+---
+
+## 🚀 Local Development
 
 ### Prerequisites
 
-* **Node.js:** v18+ or v24+
-* **Python:** v3.10+ or v3.12+
-* **FFmpeg:** Required by Whisper for audio decoding
-
-### Install FFmpeg on Windows
-
-```bash
-winget install --id=Gyan.FFmpeg -e --accept-package-agreements --accept-source-agreements
-```
-
-After installation, restart your terminal so FFmpeg is recognized in PATH.
+- **Node.js** v18+
+- **Python** 3.10+
+- **FFmpeg** (required by the audio pipeline)
+  ```bash
+  # Windows
+  winget install --id=Gyan.FFmpeg -e
+  ```
+- A **Supabase** project (free tier is fine)
+- A **Groq** API key (free tier provides Whisper access)
 
 ---
 
-### 1. Run the Frontend
+### Frontend
 
 ```bash
-cd Mockly/frontend
+cd frontend
 npm install
 npm run dev
+# → http://localhost:5173
 ```
 
-Frontend:
-
-```text
-http://localhost:5173
+Create `frontend/.env.local`:
+```
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+VITE_API_URL=http://localhost:8000
 ```
 
 ---
 
-### 2. Run the Backend
+### Backend
 
 ```bash
-cd Mockly/backend
-
+cd backend
 python -m venv venv
-venv\Scripts\activate
+venv\Scripts\activate          # Windows
+# source venv/bin/activate     # Mac/Linux
 
 pip install -r requirements.txt
-pip install openai-whisper python-multipart
-
-python -m uvicorn main:app --reload
+uvicorn main:app --reload
+# → http://localhost:8000
 ```
 
-Backend:
-
-```text
-http://localhost:8000/
+Create `backend/.env`:
+```
+GROQ_API_KEY=your-groq-api-key
+FRONTEND_URL=http://localhost:5173
 ```
 
-Health check:
+> ⚠️ **Never commit `.env` files.** They are excluded by `.gitignore`. Manage secrets via Railway/Vercel/Supabase environment variable dashboards in production.
 
-```text
-http://localhost:8000/api/health
+---
+
+## 🌐 Deployment
+
+| Layer | Platform | Notes |
+|---|---|---|
+| Frontend | Vercel | Auto-deploys from `main` branch |
+| Backend | Railway | Runs `uvicorn main:app` via `Procfile`, 1 worker |
+| Database + Auth | Supabase | Postgres + Row Level Security |
+| Speech-to-Text | Groq API | Whisper `large-v3-turbo` model via REST |
+
+### Required Environment Variables
+
+**Railway (Backend):**
+```
+GROQ_API_KEY        — Groq API key for Whisper transcription
+FRONTEND_URL        — Vercel production URL (for CORS)
 ```
 
-API documentation:
-
-```text
-http://localhost:8000/docs
+**Vercel (Frontend):**
+```
+VITE_SUPABASE_URL       — Supabase project URL
+VITE_SUPABASE_ANON_KEY  — Supabase anon/public key
+VITE_API_URL            — Railway backend URL
 ```
 
-Transcription endpoint:
+> All secrets must be configured as environment variables in the respective platform dashboards. **Do not hardcode or commit any API keys, passwords, or secrets.**
 
-```text
-POST http://localhost:8000/api/transcribe
+---
+
+## 🔒 Security Notes
+
+- `.env`, `.env.local`, `.env.production` are excluded from Git via `.gitignore`
+- Supabase Row Level Security (RLS) ensures users can only read/write their own interview records
+- The `GROQ_API_KEY` is only present on the Railway backend — never exposed to the browser
+- The Supabase `anon` key is safe to include in frontend builds; RLS enforces access control
+
+---
+
+## 📊 ML Pipeline
+
+```
+Audio (WebM)
+    ↓
+Groq Whisper large-v3-turbo  →  Transcript
+    ↓
+Librosa Audio Analysis
+    ├─ WPM (words per minute)
+    ├─ Pause count + average pause duration
+    ├─ Silence ratio
+    ├─ Filler word detection (um, uh, like, basically …)
+    └─ Repetition detection
+    ↓
+Random Forest Classifier  →  Hesitation level (Low / Medium / High)
+    ↓
+Sentence Transformers (all-MiniLM-L6-v2)  →  Semantic relevance score
+    ↓
+Feedback Generator  →  Summary + actionable suggestions
 ```
 
 ---
 
+## 📄 License
 
-```
+This project was built as part of the **BanoQabil** program. All rights reserved.

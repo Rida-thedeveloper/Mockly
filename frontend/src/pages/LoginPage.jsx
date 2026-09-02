@@ -150,6 +150,7 @@ export default function LoginPage({ setCurrentPage, setUser, onAuth }) {
   const [authError, setAuthError] = useState('');
   const [authSuccess, setAuthSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   // Sign-up state
   const [suFirst, setSuFirst] = useState('');
@@ -203,6 +204,23 @@ export default function LoginPage({ setCurrentPage, setUser, onAuth }) {
       setAuthError(error.message);
     } else {
       if (onAuth) onAuth(); else setCurrentPage('dashboard');
+    }
+  }
+
+  async function handleGoogleSignIn() {
+    setAuthError('');
+    setGoogleLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+    // On success Supabase redirects to Google — no further action needed here.
+    // If there's an immediate error (e.g., provider not enabled), show it.
+    if (error) {
+      setAuthError(error.message);
+      setGoogleLoading(false);
     }
   }
 
@@ -271,13 +289,13 @@ export default function LoginPage({ setCurrentPage, setUser, onAuth }) {
             {/* Google only */}
             <div style={{ marginBottom: 32 }}>
               <SocialButton
-                icon={<GoogleIcon />}
-                label={mode === 'signup' ? 'Sign up with Google' : 'Sign in with Google'}
-                onClick={() => {
-                  setUser({ name: 'Google User', email: 'user@gmail.com' });
-                  if (onAuth) onAuth(); else setCurrentPage('dashboard');
-                }}
+                icon={googleLoading
+                  ? <span style={{ width: 17, height: 17, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
+                  : <GoogleIcon />}
+                label={googleLoading ? 'Redirecting…' : (mode === 'signup' ? 'Sign up with Google' : 'Sign in with Google')}
+                onClick={googleLoading ? undefined : handleGoogleSignIn}
               />
+              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
             </div>
 
             {/* Divider */}

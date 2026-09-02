@@ -59,12 +59,12 @@ export default function DashboardPage({ setCurrentPage, user }) {
   const totalInterviews = historyData.length;
   const avgScore = totalInterviews > 0 ? Math.round(historyData.reduce((acc, curr) => acc + (curr.overall_score || 0), 0) / totalInterviews) : 0;
 
-  let topSkill = "Clarity";
-  let focusArea = "Pacing";
+  let topSkill = "—";
+  let focusArea = "—";
   if (totalInterviews > 0) {
     const avgRel = historyData.reduce((acc, curr) => acc + (curr.avg_relevance || 0), 0) / totalInterviews;
-    if (avgRel > 75) topSkill = "Relevance";
-    else topSkill = "Fluency";
+    if (avgRel > 75) { topSkill = "Relevance"; focusArea = "Fluency"; }
+    else { topSkill = "Fluency"; focusArea = "Relevance"; }
   }
 
   const stats = [
@@ -346,6 +346,15 @@ export default function DashboardPage({ setCurrentPage, user }) {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {recentInterviews.length === 0 && !loading && (
+              <div style={{
+                background: 'var(--surface)', border: '1px dashed var(--border)',
+                borderRadius: 14, padding: '32px 24px', textAlign: 'center',
+                color: 'var(--text-muted)', fontSize: 13, fontFamily: SANS,
+              }}>
+                No sessions completed yet. Start your first mock interview!
+              </div>
+            )}
             {recentInterviews.map((item, idx) => {
               const RoleIcon = roleIcon(item.role);
               const sc = scoreColor(item.score);

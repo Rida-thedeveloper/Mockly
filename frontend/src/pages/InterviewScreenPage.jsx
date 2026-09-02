@@ -162,7 +162,7 @@ function SpeechAnalysisPanel({ features, transcript, hesitation, feedback, isLoa
             ))}
           </div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 10 }}>
           {[0.1, 0.2, 0.3, 0.15, 0.25, 0.35].map((d, i) => (
             <motion.div
               key={i}
@@ -241,7 +241,7 @@ function SpeechAnalysisPanel({ features, transcript, hesitation, feedback, isLoa
       </div>
 
       {/* Metrics grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10, marginBottom: 20 }}>
         {metrics.map((m, i) => (
           <motion.div key={m.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
             <MetricTile {...m} />
@@ -880,13 +880,13 @@ export default function InterviewScreenPage({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
             style={{
-              display: 'flex', alignItems: 'center', gap: 14,
+              display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
               background: 'rgba(255,255,255,0.02)',
               border: '1px solid rgba(255,255,255,0.07)',
               borderRadius: 12, padding: '12px 18px',
             }}
           >
-            <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
               <span style={{
                 fontFamily: "'Playfair Display', serif",
                 fontSize: 15, fontWeight: 700, fontStyle: 'italic',
@@ -966,7 +966,7 @@ export default function InterviewScreenPage({
               }} />
 
               {/* Question header */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22, flexWrap: 'wrap', gap: 14 }}>
                 <div style={{
                   display: 'inline-flex', alignItems: 'center', gap: 7,
                   padding: '4px 12px', borderRadius: 999,
@@ -1260,7 +1260,7 @@ export default function InterviewScreenPage({
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 22 }}
+                  style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 22, flexWrap: 'wrap' }}
                 >
                   {!hasResult && !currentAnswer.isAnalyzing && (
                     <motion.button
@@ -1310,7 +1310,7 @@ export default function InterviewScreenPage({
           </AnimatePresence>
 
           {/* ── Navigation ── */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
             <motion.button
               onClick={() => setCurrentIdx(i => Math.max(0, i - 1))}
               disabled={currentIdx === 0}
@@ -1382,7 +1382,7 @@ export default function InterviewScreenPage({
         </div>
 
         {/* ══ RIGHT SIDEBAR ═════════════════════════════════════════ */}
-        <div style={{
+        <div className="interview-sidebar" style={{
           width: 268, flexShrink: 0,
           background: 'rgba(255,255,255,0.02)',
           border: '1px solid rgba(255,255,255,0.07)',
@@ -1478,10 +1478,6 @@ export default function InterviewScreenPage({
                     color: isActive ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.3)',
                     lineHeight: 1.5, margin: 0,
                     paddingLeft: 28,
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden',
                   }}>
                     {q}
                   </p>
@@ -1491,12 +1487,8 @@ export default function InterviewScreenPage({
                       fontFamily: "'DM Mono', monospace",
                       fontSize: 9, color: 'rgba(61,184,160,0.5)',
                       fontStyle: 'italic', margin: '5px 0 0', paddingLeft: 28,
-                      display: '-webkit-box',
-                      WebkitLineClamp: 1,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
                     }}>
-                      "{a.transcript.slice(0, 60)}{a.transcript.length > 60 ? '…' : ''}"
+                      "{a.transcript}"
                     </p>
                   )}
                 </motion.div>
