@@ -168,6 +168,9 @@ function ScoreRing({ score }) {
   );
 }
 
+// Module-level lock to survive React Strict Mode unmount/remounts
+const savingSessions = new Set();
+
 export default function FinalReportPage({ setCurrentPage, recordedAnswers, interviewSetup }) {
   const answerKeys = Object.keys(recordedAnswers);
   const hasAnswers = answerKeys.length > 0;
@@ -231,12 +234,22 @@ export default function FinalReportPage({ setCurrentPage, recordedAnswers, inter
 
   useEffect(() => {
     if (hasAnswers && score != null && !hasSaved) {
+      const sId = interviewSetup?.sessionId || 'legacy';
+
+      // React Strict Mode concurrent trigger prevention
+      if (sId !== 'legacy') {
+        if (savingSessions.has(sId)) {
+          setHasSaved(true);
+          return;
+        }
+        savingSessions.add(sId);
+      }
+
       async function saveInterview() {
         try {
           const { data: { user } } = await supabase.auth.getUser();
           if (!user) return;
 
-          const sId = interviewSetup?.sessionId || 'legacy';
           if (sId !== 'legacy') {
             const { data: existing } = await supabase
               .from('interviews')
