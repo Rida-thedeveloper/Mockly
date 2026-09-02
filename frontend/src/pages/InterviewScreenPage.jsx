@@ -723,7 +723,16 @@ export default function InterviewScreenPage({
     setErrorMsg('');
     audioChunksRef.current = [];
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      // ── Explicit audio constraints force the browser to select the default
+      //    Communication microphone rather than silent 'Stereo Mix' devices.
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+        video: false
+      });
 
       // ── Diagnostics: verify we actually have a live audio track ──────────
       const audioTracks = stream.getAudioTracks();
@@ -742,6 +751,7 @@ export default function InterviewScreenPage({
         'audio/webm',
         'audio/ogg;codecs=opus',
         'audio/ogg',
+        'audio/mp4', // Fallback for Safari
       ];
       const mimeType = preferredTypes.find(t => MediaRecorder.isTypeSupported(t)) || '';
       console.log('[Recording] Selected mimeType:', mimeType || '(browser default)');
@@ -797,6 +807,7 @@ export default function InterviewScreenPage({
       setErrorMsg('Microphone permission denied or device not found.');
     }
   };
+
 
 
   const stopRecording = () => {
