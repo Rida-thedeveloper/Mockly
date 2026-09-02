@@ -7,8 +7,8 @@ Local Whisper / PyTorch removed to eliminate Railway OOM issues.
 The function interface (transcribe_audio_file) is unchanged so all
 downstream analysis continues to work without modification.
 
-NOTE: imageio_ffmpeg PATH setup is retained because librosa / audio
-features still require an ffmpeg executable at runtime.
+NOTE: imageio_ffmpeg PATH setup is retained because audio_features.py
+still uses ffmpeg (via imageio_ffmpeg) to transcode .webm → WAV.
 """
 
 import logging
@@ -17,8 +17,8 @@ import os
 logger = logging.getLogger(__name__)
 
 # ── FFmpeg PATH setup ─────────────────────────────────────────────────────────
-# Keep this block: librosa uses ffmpeg to decode .webm for audio-feature
-# extraction.  Do NOT remove until audio_features.py is verified to not need it.
+# Keep this block: audio_features.py uses imageio_ffmpeg for WebM decoding.
+# Do NOT remove without verifying audio_features.py no longer calls it.
 try:
     import imageio_ffmpeg
     import shutil
@@ -39,6 +39,22 @@ try:
 except Exception as err:
     logger.warning(f"imageio_ffmpeg PATH setup skipped: {err}")
 
+# ── Known Whisper hallucinations on silent/short audio ───────────────────────
+# Whisper (and Groq's hosted version) produces these exact strings when it
+# receives near-silent, very short, or unrecognisable audio.  We detect and
+# reject them so the frontend never shows a fake transcript.
+_HALLUCINATION_PHRASES = {
+    "thank you.",
+    "thank you",
+    "thanks for watching.",
+    "thanks for watching",
+    "you",
+    "bye.",
+    "bye",
+    ".",
+    "",
+}
+
 # ── Groq client ───────────────────────────────────────────────────────────────
 try:
     from groq import Groq
@@ -52,47 +68,82 @@ def transcribe_audio_file(audio_path: str) -> str:
     """
     Send an audio file to the Groq Speech-to-Text API and return the transcript.
 
-    Accepts the same file path that was previously passed to local Whisper;
-    the rest of the analysis pipeline is completely unchanged.
+    The function signature is identical to the old local-Whisper version so
+    all callers (main.py) work without any changes.
 
-    Returns a plain Python str in all cases (never raises so the caller's
-    try/except can decide how to handle degraded output).
+    Safe diagnostic information IS logged (filename, size, Groq response text).
+    GROQ_API_KEY is never logged.
     """
     if not _groq_available:
-        logger.error("groq package missing – cannot transcribe.")
+        logger.error("[Groq STT] groq package missing – cannot transcribe.")
         return "Transcription unavailable: groq package not installed."
 
     api_key = os.environ.get("GROQ_API_KEY", "").strip()
     if not api_key:
-        logger.error("GROQ_API_KEY environment variable is not set.")
-        return "Transcription unavailable: GROQ_API_KEY not configured."
+        logger.error("[Groq STT] GROQ_API_KEY is not set in the environment.")
+        return "Transcription unavailable: GROQ_API_KEY not configured on the server."
 
+    # ── Diagnostic: verify the file before sending ────────────────────────────
     if not os.path.exists(audio_path):
-        logger.error(f"Audio file not found: {audio_path}")
+        logger.error(f"[Groq STT] Audio file not found: {audio_path}")
         return "Transcription unavailable: audio file missing."
+
+    file_size = os.path.getsize(audio_path)
+    filename   = os.path.basename(audio_path)
+    logger.info(
+        f"[Groq STT] Preparing to transcribe | file={filename} | size={file_size} bytes"
+    )
+
+    # Guard against empty or suspiciously small files (< 1 KB is almost always
+    # silent or corrupt and would cause Whisper to hallucinate).
+    if file_size < 1000:
+        logger.warning(
+            f"[Groq STT] File too small ({file_size} bytes) – likely silent or corrupt. "
+            "Skipping Groq call."
+        )
+        return "No speech detected: the recording appears to be empty or too short."
 
     try:
         client = Groq(api_key=api_key)
+
+        # Open fresh from disk with binary mode.  Pass the filename explicitly
+        # so that Groq correctly identifies the container format (WebM/Opus).
+        # We do NOT use a prompt here: even a benign prompt biases Whisper on
+        # short/quiet audio and is the primary cause of "Thank you." hallucinations.
         with open(audio_path, "rb") as audio_file:
-            logger.info(f"[Groq STT] Sending {audio_path} to whisper-large-v3-turbo …")
+            logger.info(
+                f"[Groq STT] Sending to whisper-large-v3-turbo | "
+                f"filename={filename} | size={file_size} bytes"
+            )
             transcription = client.audio.transcriptions.create(
                 model="whisper-large-v3-turbo",
-                file=audio_file,
+                file=(filename, audio_file, "audio/webm"),   # explicit MIME hint
                 response_format="text",
-                # Prompt Groq/Whisper to preserve filler words exactly as local
-                # Whisper did, so hesitation analysis remains accurate.
-                prompt="Umm, let me think, uhh, like, you know...",
                 language="en",
+                # NO prompt parameter — avoids hallucination bias on quiet audio
             )
-        # When response_format="text", the SDK returns the transcript as a
-        # plain string directly (not a structured object).
+
+        # response_format="text" → SDK returns a plain string directly
         if isinstance(transcription, str):
             result = transcription.strip()
         else:
-            result = (transcription.text or "").strip()
+            result = (getattr(transcription, "text", "") or "").strip()
 
-        logger.info(f"[Groq STT] Transcript received ({len(result)} chars).")
-        return result if result else "No speech detected in the recording."
+        logger.info(f"[Groq STT] Raw response: '{result[:120]}'")
+
+        # ── Hallucination detection ───────────────────────────────────────────
+        if result.lower() in _HALLUCINATION_PHRASES:
+            logger.warning(
+                f"[Groq STT] Detected hallucination output: '{result}'. "
+                "Replacing with no-speech indicator."
+            )
+            return "No speech detected in the recording."
+
+        if not result:
+            return "No speech detected in the recording."
+
+        logger.info(f"[Groq STT] Transcript accepted ({len(result)} chars).")
+        return result
 
     except Exception as err:
         logger.error(f"[Groq STT] Transcription error: {err}")
