@@ -290,7 +290,7 @@ export default function LoginPage({ setCurrentPage, setUser, onAuth }) {
             <div style={{ marginBottom: 32 }}>
               <SocialButton
                 icon={googleLoading
-                  ? <span style={{ width: 17, height: 17, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
+                  ? <span style={{ width: 17, height: 17, padding: 10, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
                   : <GoogleIcon />}
                 label={googleLoading ? 'Redirecting…' : (mode === 'signup' ? 'Sign up with Google' : 'Sign in with Google')}
                 onClick={googleLoading ? undefined : handleGoogleSignIn}

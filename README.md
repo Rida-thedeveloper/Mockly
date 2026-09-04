@@ -6,8 +6,15 @@
 
 ## 📌 Project Overview
 
-**Mockly** is a voice-first, AI-powered mock interview platform designed for students and fresh graduates.
+**Mockly** is a voice-first, AI-powered mock interview platform.
 
+### Problem
+Many students and fresh graduates struggle with interview anxiety. Traditional mock interviews are hard to schedule, expensive, and often focus only on technical knowledge rather than communication style.
+
+### Target Users
+**Students, fresh graduates, and junior professionals** looking to improve their communication skills and build confidence before actual job interviews.
+
+### Solution
 Rather than evaluating *what* a candidate says, Mockly analyzes *how* they say it — speaking pace, pauses, silence ratio, filler words, repetitions, answer relevance, and hesitation patterns — then delivers immediate, personalized feedback.
 
 ---
